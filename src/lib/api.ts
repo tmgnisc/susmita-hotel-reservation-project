@@ -218,6 +218,46 @@ export const api = {
     return apiRequest<{ items: any[] }>(`/food/items${query ? `?${query}` : ''}`);
   },
 
+  async getFoodItem(id: string) {
+    return apiRequest<{ item: any }>(`/food/items/${id}`);
+  },
+
+  async createFoodItem(item: {
+    name: string;
+    description?: string;
+    price: number;
+    category: string;
+    image?: string;
+    available?: boolean;
+    preparationTime?: number;
+  }) {
+    return apiRequest<{ item: any }>('/food/items', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    });
+  },
+
+  async updateFoodItem(id: string, item: {
+    name?: string;
+    description?: string;
+    price?: number;
+    category?: string;
+    image?: string;
+    available?: boolean;
+    preparationTime?: number;
+  }) {
+    return apiRequest<{ item: any }>(`/food/items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(item),
+    });
+  },
+
+  async deleteFoodItem(id: string) {
+    return apiRequest<{ message: string }>(`/food/items/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   async createFoodOrder(order: {
     items: { foodItemId: string; quantity: number }[];
     roomNumber?: string;

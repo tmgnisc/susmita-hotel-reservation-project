@@ -11,6 +11,8 @@ import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StaffManagement from "./pages/admin/StaffManagement";
 import StaffDashboard from "./pages/staff/StaffDashboard";
+import RoomManagement from "./pages/staff/RoomManagement";
+import MenuManagement from "./pages/staff/MenuManagement";
 import UserDashboard from "./pages/user/UserDashboard";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/staff" element={<StaffManagement />} />
             <Route path="/staff" element={<StaffDashboard />} />
+            <Route path="/staff/rooms" element={<RoomManagement />} />
+            <Route path="/staff/menu" element={<MenuManagement />} />
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/user/profile" element={<ProfilePage />} />
             <Route path="/profile" element={<ProfilePage />} />
