@@ -61,7 +61,7 @@ router.get('/items/:id', async (req, res, next) => {
   }
 });
 
-router.post('/items', authenticate, authorize('admin'), async (req, res, next) => {
+router.post('/items', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { name, description, price, category, image, available, preparationTime } = req.body;
     
@@ -95,7 +95,7 @@ router.post('/items', authenticate, authorize('admin'), async (req, res, next) =
   }
 });
 
-router.put('/items/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.put('/items/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, price, category, image, available, preparationTime } = req.body;
@@ -140,7 +140,7 @@ router.put('/items/:id', authenticate, authorize('admin'), async (req, res, next
   }
 });
 
-router.delete('/items/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.delete('/items/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { id } = req.params;
     

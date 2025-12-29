@@ -148,6 +148,48 @@ export const api = {
     return apiRequest<{ room: any }>(`/rooms/${id}`);
   },
 
+  async createRoom(room: {
+    name: string;
+    type: string;
+    price: number;
+    capacity: number;
+    status: string;
+    description?: string;
+    floor: number;
+    roomNumber: string;
+    amenities?: string[];
+    images?: string[];
+  }) {
+    return apiRequest<{ room: any }>('/rooms', {
+      method: 'POST',
+      body: JSON.stringify(room),
+    });
+  },
+
+  async updateRoom(id: string, room: {
+    name?: string;
+    type?: string;
+    price?: number;
+    capacity?: number;
+    status?: string;
+    description?: string;
+    floor?: number;
+    roomNumber?: string;
+    amenities?: string[];
+    images?: string[];
+  }) {
+    return apiRequest<{ room: any }>(`/rooms/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(room),
+    });
+  },
+
+  async deleteRoom(id: string) {
+    return apiRequest<{ message: string }>(`/rooms/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Bookings
   async getBookings() {
     return apiRequest<{ bookings: any[] }>('/bookings');

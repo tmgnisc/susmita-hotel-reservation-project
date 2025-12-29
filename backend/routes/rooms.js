@@ -103,8 +103,8 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// Create room (admin only)
-router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
+// Create room (admin and staff)
+router.post('/', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { name, type, price, capacity, status, description, floor, roomNumber, amenities, images } = req.body;
     
@@ -168,8 +168,8 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
   }
 });
 
-// Update room (admin only)
-router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+// Update room (admin and staff)
+router.put('/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, type, price, capacity, status, description, floor, roomNumber, amenities, images } = req.body;
@@ -249,8 +249,8 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
   }
 });
 
-// Delete room (admin only)
-router.delete('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+// Delete room (admin and staff)
+router.delete('/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
   try {
     const { id } = req.params;
     
