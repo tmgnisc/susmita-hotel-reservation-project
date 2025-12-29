@@ -69,35 +69,40 @@ export default function CartPage() {
     setIsProcessing(true);
 
     try {
-      // Process room bookings
+      const bookingIds: string[] = [];
+      const orderIds: string[] = [];
+
+      // Create room bookings first
       for (const roomItem of roomItems) {
         if (roomItem.roomItem?.checkIn && roomItem.roomItem.checkOut) {
-          await api.createBooking({
+          const booking = await api.createBooking({
             roomId: roomItem.roomItem.id,
             checkIn: roomItem.roomItem.checkIn,
             checkOut: roomItem.roomItem.checkOut,
             guests: roomItem.roomItem.guests || 1,
           });
+          if (booking.booking?.id) {
+            bookingIds.push(booking.booking.id);
+          }
         }
       }
 
-      // Process food orders
+      // Create food orders
       if (foodItems.length > 0) {
-        await api.createFoodOrder({
+        const order = await api.createFoodOrder({
           items: foodItems.map((item) => ({
             foodItemId: item.foodItem!.id,
             quantity: item.quantity,
           })),
         });
+        if (order.order?.id) {
+          orderIds.push(order.order.id);
+        }
       }
 
-      toast({
-        title: "Order placed successfully!",
-        description: "Your bookings and orders have been confirmed.",
-      });
-
-      clearCart();
-      navigate("/user");
+      setCreatedBookingIds(bookingIds);
+      setCreatedOrderIds(orderIds);
+      setShowPaymentDialog(true);
     } catch (error) {
       if (error instanceof ApiError) {
         toast({
@@ -109,6 +114,18 @@ export default function CartPage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "Order placed successfully!",
+      description: "Your bookings and orders have been confirmed.",
+    });
+
+    clearCart();
+    setCreatedBookingIds([]);
+    setCreatedOrderIds([]);
+    navigate("/user");
   };
 
   const calculateNights = (checkIn?: string, checkOut?: string) => {
@@ -408,7 +425,10 @@ export default function CartPage() {
                       Processing...
                     </>
                   ) : (
-                    "Proceed to Checkout"
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Proceed to Checkout
+                    </>
                   )}
                 </Button>
 
@@ -426,6 +446,16 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+
+      <PaymentDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        amount={total}
+        onSuccess={handlePaymentSuccess}
+        bookingIds={createdBookingIds}
+        orderIds={createdOrderIds}
+      />
+
       <Footer />
     </div>
   );

@@ -78,7 +78,7 @@ function PaymentForm({
       }
     };
 
-    if (open && amount > 0) {
+    if (amount > 0 && !clientSecret) {
       createIntent();
     }
   }, [amount, bookingIds, orderIds]);
@@ -220,7 +220,7 @@ export default function PaymentDialog({
             Enter your payment details to complete your purchase
           </DialogDescription>
         </DialogHeader>
-        {open && amount > 0 && (
+        {open && amount > 0 && stripePromise && (
           <Elements stripe={stripePromise}>
             <PaymentForm
               amount={amount}
