@@ -23,18 +23,64 @@ async function runMigrations() {
     
     // Read and execute schema file
     const schemaPath = path.join(__dirname, '../database/schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
+    let schema = fs.readFileSync(schemaPath, 'utf8');
     
-    // Split by semicolon and execute each statement
+    // Remove single-line comments
+    schema = schema.replace(/--.*$/gm, '');
+    
+    // Split by semicolon and filter out empty statements
     const statements = schema
       .split(';')
       .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+      .filter(stmt => stmt.length > 0 && !stmt.match(/^\s*$/));
     
-    for (const statement of statements) {
-      if (statement.trim()) {
-        await connection.query(statement);
+    console.log(`Found ${statements.length} SQL statements to execute`);
+    
+    // Execute each statement
+    let successCount = 0;
+    for (let i = 0; i < statements.length; i++) {
+      const statement = statements[i];
+      if (statement) {
+        try {
+          // Add semicolon back if not present
+          const sql = statement.endsWith(';') ? statement : statement + ';';
+          await connection.query(sql);
+          successCount++;
+        } catch (error) {
+          // Ignore "table already exists" errors
+          if (error.code === 'ER_TABLE_EXISTS_ERROR' || 
+              error.code === 'ER_DUP_TABLE_NAME' ||
+              error.message.includes('already exists')) {
+            // Table already exists, that's okay
+            successCount++;
+            continue;
+          } else {
+            console.error(`\n❌ Error executing statement ${i + 1}/${statements.length}`);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            console.error('SQL:', statement.substring(0, 200));
+            throw error;
+          }
+        }
       }
+    }
+    
+    console.log(`✓ Successfully executed ${successCount}/${statements.length} statements`);
+    
+    // Verify tables were created
+    const [tables] = await connection.query(
+      `SELECT TABLE_NAME FROM information_schema.TABLES 
+       WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'`,
+      [process.env.DB_NAME]
+    );
+    
+    console.log(`✓ Found ${tables.length} tables in database`);
+    if (tables.length > 0) {
+      console.log('  Tables:', tables.map(t => t.TABLE_NAME).join(', '));
+    }
+    
+    if (tables.length === 0) {
+      throw new Error('No tables were created. Please check the SQL schema file.');
     }
     
     console.log('✓ All tables created successfully');
@@ -57,25 +103,44 @@ async function runMigrations() {
 
 async function seedInitialData(connection) {
   try {
-    // Check if admin user exists
-    const [users] = await connection.query('SELECT COUNT(*) as count FROM users WHERE role = ?', ['admin']);
+    // Wait a bit to ensure tables are fully created
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    if (users[0].count === 0) {
-      // Create default admin user (password: admin123)
-      const bcrypt = await import('bcryptjs');
-      const hashedPassword = await bcrypt.default.hash('admin123', 10);
+    // Check if users table exists and if superadmin user exists
+    try {
+      const [users] = await connection.query('SELECT COUNT(*) as count FROM users WHERE email = ?', ['admin@gmail.com']);
       
-      const adminId = (await import('crypto')).randomUUID();
-      await connection.query(
-        `INSERT INTO users (id, email, name, password, role, phone, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-        [adminId, 'admin@hotelsus.com', 'Admin User', hashedPassword, 'admin', '+1234567890']
-      );
-      
-      console.log('✓ Default admin user created (email: admin@hotelsus.com, password: admin123)');
+      if (users[0].count === 0) {
+        // Create superadmin user (password: admin@123)
+        const bcrypt = await import('bcryptjs');
+        const hashedPassword = await bcrypt.default.hash('admin@123', 10);
+        
+        const { randomUUID } = await import('crypto');
+        const adminId = randomUUID();
+        
+        await connection.query(
+          `INSERT INTO users (id, email, name, password, role, phone, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+          [adminId, 'admin@gmail.com', 'Super Admin', hashedPassword, 'admin', '+1234567890']
+        );
+        
+        console.log('✓ Superadmin user created successfully');
+        console.log('  Email: admin@gmail.com');
+        console.log('  Password: admin@123');
+        console.log('  Role: admin');
+      } else {
+        console.log('✓ Superadmin user already exists');
+      }
+    } catch (tableError) {
+      if (tableError.code === 'ER_NO_SUCH_TABLE') {
+        console.error('⚠ Users table not found. Tables may not have been created properly.');
+        throw tableError;
+      }
+      throw tableError;
     }
   } catch (error) {
-    console.error('Error seeding initial data:', error);
+    console.error('Error seeding initial data:', error.message);
+    throw error;
   }
 }
 

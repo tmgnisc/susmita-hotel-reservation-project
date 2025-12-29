@@ -15,6 +15,7 @@ import {
   Menu,
   ClipboardList,
   ShoppingBag,
+  Home,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface DashboardLayoutProps {
 }
 
 const adminLinks = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Bookings", icon: Calendar },
   { href: "/admin/rooms", label: "Rooms", icon: Bed },
@@ -35,6 +37,7 @@ const adminLinks = [
 ];
 
 const staffLinks = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
   { href: "/staff/check-in", label: "Check-in/out", icon: ClipboardList },
   { href: "/staff/rooms", label: "Room Status", icon: Bed },
@@ -43,6 +46,7 @@ const staffLinks = [
 ];
 
 const userLinks = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/user", label: "Dashboard", icon: LayoutDashboard },
   { href: "/user/bookings", label: "My Bookings", icon: Calendar },
   { href: "/user/orders", label: "Food Orders", icon: ShoppingBag },

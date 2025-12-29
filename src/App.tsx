@@ -11,6 +11,7 @@ import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StaffDashboard from "./pages/staff/StaffDashboard";
 import UserDashboard from "./pages/user/UserDashboard";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,8 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/staff" element={<StaffDashboard />} />
             <Route path="/user" element={<UserDashboard />} />
+            <Route path="/user/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

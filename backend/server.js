@@ -11,6 +11,7 @@ import bookingRoutes from './routes/bookings.js';
 import foodRoutes from './routes/food.js';
 import staffRoutes from './routes/staff.js';
 import paymentRoutes from './routes/payments.js';
+import uploadRoutes from './routes/upload.js';
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

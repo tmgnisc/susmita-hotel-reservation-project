@@ -19,7 +19,7 @@ export default function AuthPage() {
     name: "",
   });
 
-  const { login, signup } = useAuth();
+  const { login, signup, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -35,14 +35,9 @@ export default function AuthPage() {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          // Navigate based on role
-          if (formData.email.includes("admin")) {
-            navigate("/admin");
-          } else if (formData.email.includes("staff")) {
-            navigate("/staff");
-          } else {
-            navigate("/user");
-          }
+          
+          // Redirect to home page after login
+          navigate("/");
         } else {
           toast({
             title: "Login failed",
@@ -51,13 +46,16 @@ export default function AuthPage() {
           });
         }
       } else {
+        // Signup only creates regular users (role: 'user')
+        // Staff and admin accounts are created by admin only
         const result = await signup(formData.email, formData.password, formData.name);
         if (result.success) {
           toast({
             title: "Account created!",
-            description: "Welcome to LuxeStay.",
+            description: "Welcome to LuxeStay. Please complete your profile.",
           });
-          navigate("/user");
+          // Redirect to profile page to complete profile setup
+          navigate("/profile");
         } else {
           toast({
             title: "Signup failed",
@@ -70,12 +68,6 @@ export default function AuthPage() {
       setIsLoading(false);
     }
   };
-
-  const demoAccounts = [
-    { email: "admin@luxestay.com", role: "Super Admin" },
-    { email: "staff@luxestay.com", role: "Hotel Staff" },
-    { email: "user@example.com", role: "Guest" },
-  ];
 
   return (
     <div className="min-h-screen flex">
@@ -204,29 +196,17 @@ export default function AuthPage() {
             </p>
           </div>
 
-          {/* Demo Accounts */}
-          <div className="mt-8 p-4 rounded-xl bg-secondary">
-            <p className="text-sm font-medium text-foreground mb-3">Demo Accounts</p>
-            <div className="space-y-2">
-              {demoAccounts.map((account) => (
-                <button
-                  key={account.email}
-                  type="button"
-                  onClick={() => {
-                    setFormData({ ...formData, email: account.email, password: "password123" });
-                    setIsLogin(true);
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-background hover:bg-muted transition-colors text-left"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{account.role}</p>
-                    <p className="text-xs text-muted-foreground">{account.email}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">password123</span>
-                </button>
-              ))}
+          {isLogin && (
+            <div className="mt-8 p-4 rounded-xl bg-secondary">
+              <p className="text-sm font-medium text-foreground mb-2">Admin Login</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Super admin can login with: admin@gmail.com / admin@123
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Staff accounts are created by admin only. Regular users can sign up.
+              </p>
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
 
