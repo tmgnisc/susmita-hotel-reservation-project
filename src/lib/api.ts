@@ -185,6 +185,60 @@ export const api = {
       body: JSON.stringify(order),
     });
   },
+
+  // Staff Management (Admin only)
+  async getStaff(filters?: { department?: string; status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.department) params.append('department', filters.department);
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return apiRequest<{ staff: any[] }>(`/staff${query ? `?${query}` : ''}`);
+  },
+
+  async getStaffMember(id: string) {
+    return apiRequest<{ staffMember: any }>(`/staff/${id}`);
+  },
+
+  async createStaff(staff: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    department: string;
+    phone?: string;
+    avatar?: string;
+    status?: string;
+    hireDate: string;
+  }) {
+    return apiRequest<{ staffMember: any; loginCredentials: { email: string; password: string } }>('/staff', {
+      method: 'POST',
+      body: JSON.stringify(staff),
+    });
+  },
+
+  async updateStaff(id: string, updates: {
+    name?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+    department?: string;
+    phone?: string;
+    avatar?: string;
+    status?: string;
+    hireDate?: string;
+  }) {
+    return apiRequest<{ staffMember: any }>(`/staff/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  async deleteStaff(id: string) {
+    return apiRequest<{ message: string }>(`/staff/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 export { ApiError };

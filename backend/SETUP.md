@@ -106,3 +106,5 @@ curl -X POST http://localhost:5000/api/auth/login \
 - Check database user has CREATE DATABASE permission
 - Verify `.env` file has correct database credentials
 
+
+

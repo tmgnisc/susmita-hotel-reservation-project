@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage";
 import RoomsPage from "./pages/RoomsPage";
 import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import StaffManagement from "./pages/admin/StaffManagement";
 import StaffDashboard from "./pages/staff/StaffDashboard";
 import UserDashboard from "./pages/user/UserDashboard";
 import ProfilePage from "./pages/ProfilePage";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/rooms" element={<RoomsPage />} />
             <Route path="/dining" element={<DiningPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/staff" element={<StaffManagement />} />
             <Route path="/staff" element={<StaffDashboard />} />
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/user/profile" element={<ProfilePage />} />
