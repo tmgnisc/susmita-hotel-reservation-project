@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { mockFoodItems } from "@/data/mockData";
+import { api, ApiError } from "@/lib/api";
 import { FoodCategory, FoodItem } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import {
   Clock,
   Search,
   X,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -31,6 +32,8 @@ interface CartItem {
 }
 
 export default function DiningPage() {
+  const [foodItems, setFoodItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<FoodCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -38,13 +41,28 @@ export default function DiningPage() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const filteredItems = mockFoodItems
-    .filter((item) => {
-      if (selectedCategory !== "all") {
-        return item.category === selectedCategory;
+  useEffect(() => {
+    const loadFoodItems = async () => {
+      try {
+        setIsLoading(true);
+        const filters: any = { available: true };
+        if (selectedCategory !== "all") {
+          filters.category = selectedCategory;
+        }
+        const response = await api.getFoodItems(filters);
+        setFoodItems(response.items || []);
+      } catch (error) {
+        console.error("Failed to load food items:", error);
+        setFoodItems([]);
+      } finally {
+        setIsLoading(false);
       }
-      return true;
-    })
+    };
+
+    loadFoodItems();
+  }, [selectedCategory]);
+
+  const filteredItems = foodItems
     .filter((item) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -179,8 +197,13 @@ export default function DiningPage() {
 
       {/* Menu Grid */}
       <section className="py-12 container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item, index) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredItems.map((item, index) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
@@ -190,7 +213,7 @@ export default function DiningPage() {
             >
               <div className="relative h-48 overflow-hidden">
                 <img
-                  src={item.image}
+                  src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
                   alt={item.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -222,7 +245,7 @@ export default function DiningPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 text-muted-foreground text-sm">
                     <Clock className="w-4 h-4" />
-                    {item.preparationTime} min
+                    {item.preparation_time || item.preparationTime || 0} min
                   </div>
                   <Button
                     variant="gold"
@@ -236,10 +259,11 @@ export default function DiningPage() {
                 </div>
               </div>
             </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredItems.length === 0 && (
+        {!isLoading && filteredItems.length === 0 && (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-lg">No items found.</p>
           </div>

@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { mockRooms } from "@/data/mockData";
+import { api, ApiError } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 import {
   Star,
   MapPin,
@@ -29,7 +31,26 @@ const amenities = [
 ];
 
 export default function LandingPage() {
-  const featuredRooms = mockRooms.slice(0, 3);
+  const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.getRooms({ status: "available" });
+        // Get first 3 available rooms
+        setFeaturedRooms((response.rooms || []).slice(0, 3));
+      } catch (error) {
+        console.error("Failed to load rooms:", error);
+        setFeaturedRooms([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRooms();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -258,8 +279,17 @@ export default function LandingPage() {
             </Button>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredRooms.map((room, index) => (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-accent" />
+            </div>
+          ) : featuredRooms.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">No rooms available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredRooms.map((room, index) => (
               <motion.div
                 key={room.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -270,7 +300,7 @@ export default function LandingPage() {
               >
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src={room.images[0]}
+                    src={room.images?.[0] || "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800"}
                     alt={room.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -299,7 +329,7 @@ export default function LandingPage() {
                     {room.description}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {room.amenities.slice(0, 3).map((amenity) => (
+                    {room.amenities?.slice(0, 3).map((amenity: string) => (
                       <span
                         key={amenity}
                         className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
@@ -307,7 +337,7 @@ export default function LandingPage() {
                         {amenity}
                       </span>
                     ))}
-                    {room.amenities.length > 3 && (
+                    {room.amenities && room.amenities.length > 3 && (
                       <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">
                         +{room.amenities.length - 3} more
                       </span>
@@ -326,8 +356,9 @@ export default function LandingPage() {
                   </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

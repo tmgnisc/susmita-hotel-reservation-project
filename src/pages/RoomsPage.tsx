@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { mockRooms } from "@/data/mockData";
+import { api, ApiError } from "@/lib/api";
 import { Room, RoomType } from "@/types";
 import {
   Search,
@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Star,
   X,
+  Loader2,
 } from "lucide-react";
 
 const roomTypes: { value: RoomType | "all"; label: string }[] = [
@@ -33,13 +34,36 @@ const priceRanges = [
 ];
 
 export default function RoomsPage() {
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<RoomType | "all">("all");
   const [selectedPrice, setSelectedPrice] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name">("price-asc");
 
-  const filteredRooms = mockRooms
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        setIsLoading(true);
+        const filters: any = {};
+        if (selectedType !== "all") {
+          filters.type = selectedType;
+        }
+        const response = await api.getRooms(filters);
+        setRooms(response.rooms || []);
+      } catch (error) {
+        console.error("Failed to load rooms:", error);
+        setRooms([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRooms();
+  }, []);
+
+  const filteredRooms = rooms
     .filter((room) => {
       // Search filter
       if (searchQuery) {
@@ -61,6 +85,9 @@ export default function RoomsPage() {
     .filter((room) => {
       // Price filter
       if (selectedPrice !== "all") {
+        if (selectedPrice === "800+") {
+          return room.price >= 800;
+        }
         const [min, max] = selectedPrice.split("-").map((p) => parseInt(p) || Infinity);
         return room.price >= min && room.price <= max;
       }
@@ -259,8 +286,13 @@ export default function RoomsPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredRooms.map((room, index) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredRooms.map((room, index) => (
             <motion.div
               key={room.id}
               initial={{ opacity: 0, y: 20 }}
@@ -270,7 +302,7 @@ export default function RoomsPage() {
             >
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src={room.images[0]}
+                  src={room.images?.[0] || "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800"}
                   alt={room.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -307,7 +339,7 @@ export default function RoomsPage() {
                   {room.description}
                 </p>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {room.amenities.slice(0, 3).map((amenity) => (
+                  {room.amenities?.slice(0, 3).map((amenity: string) => (
                     <span
                       key={amenity}
                       className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
@@ -315,7 +347,7 @@ export default function RoomsPage() {
                       {amenity}
                     </span>
                   ))}
-                  {room.amenities.length > 3 && (
+                  {room.amenities && room.amenities.length > 3 && (
                     <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">
                       +{room.amenities.length - 3}
                     </span>
@@ -343,8 +375,9 @@ export default function RoomsPage() {
                 </div>
               </div>
             </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {filteredRooms.length === 0 && (
           <div className="text-center py-16">
