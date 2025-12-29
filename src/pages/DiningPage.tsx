@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { FoodCategory, FoodItem } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   ShoppingCart,
@@ -26,19 +27,13 @@ const categories: { value: FoodCategory | "all"; label: string }[] = [
   { value: "beverage", label: "Beverages" },
 ];
 
-interface CartItem {
-  foodItem: FoodItem;
-  quantity: number;
-}
-
 export default function DiningPage() {
   const [foodItems, setFoodItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<FoodCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+  const { addFoodItem, getItemCount } = useCart();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,7 +69,7 @@ export default function DiningPage() {
       return true;
     });
 
-  const addToCart = (item: FoodItem) => {
+  const handleAddToCart = (item: any) => {
     if (!isAuthenticated) {
       toast({
         title: "Please sign in",
@@ -84,14 +79,14 @@ export default function DiningPage() {
       return;
     }
 
-    setCart((prev) => {
-      const existing = prev.find((c) => c.foodItem.id === item.id);
-      if (existing) {
-        return prev.map((c) =>
-          c.foodItem.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
-        );
-      }
-      return [...prev, { foodItem: item, quantity: 1 }];
+    addFoodItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category,
+      description: item.description,
+      preparationTime: item.preparation_time || item.preparationTime,
     });
 
     toast({
@@ -100,18 +95,7 @@ export default function DiningPage() {
     });
   };
 
-  const updateQuantity = (itemId: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((c) =>
-          c.foodItem.id === itemId ? { ...c, quantity: c.quantity + delta } : c
-        )
-        .filter((c) => c.quantity > 0)
-    );
-  };
-
-  const cartTotal = cart.reduce((sum, c) => sum + c.foodItem.price * c.quantity, 0);
-  const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
+  const cartCount = getItemCount();
 
   const getCategoryIcon = (category: FoodCategory) => {
     switch (category) {
@@ -251,7 +235,7 @@ export default function DiningPage() {
                     variant="gold"
                     size="sm"
                     disabled={!item.available}
-                    onClick={() => addToCart(item)}
+                    onClick={() => handleAddToCart(item)}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add
@@ -275,97 +259,17 @@ export default function DiningPage() {
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-6 py-4 rounded-full bg-accent text-accent-foreground shadow-gold hover:shadow-lg transition-all"
+          asChild
+          className="fixed bottom-6 right-6 z-40"
         >
-          <ShoppingCart className="w-5 h-5" />
-          <span className="font-medium">{cartCount} items</span>
-          <span className="font-display font-bold">${cartTotal.toFixed(2)}</span>
-        </motion.button>
-      )}
-
-      {/* Cart Drawer */}
-      {isCartOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-foreground/50 z-50"
-            onClick={() => setIsCartOpen(false)}
-          />
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md z-50 bg-background shadow-lg"
+          <Link
+            to="/cart"
+            className="flex items-center gap-3 px-6 py-4 rounded-full bg-accent text-accent-foreground shadow-gold hover:shadow-lg transition-all"
           >
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <h2 className="font-display text-xl font-semibold">Your Order</h2>
-                <button onClick={() => setIsCartOpen(false)}>
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {cart.map((item) => (
-                  <div
-                    key={item.foodItem.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-secondary"
-                  >
-                    <img
-                      src={item.foodItem.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
-                      alt={item.foodItem.name}
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-foreground">{item.foodItem.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        ${item.foodItem.price} each
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => updateQuantity(item.foodItem.id, -1)}
-                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center hover:bg-muted"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.foodItem.id, 1)}
-                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center hover:bg-muted"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {cart.length === 0 && (
-                  <div className="text-center py-12">
-                    <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Your cart is empty</p>
-                  </div>
-                )}
-              </div>
-
-              {cart.length > 0 && (
-                <div className="p-6 border-t border-border space-y-4">
-                  <div className="flex items-center justify-between text-lg">
-                    <span className="text-muted-foreground">Total</span>
-                    <span className="font-display font-bold text-foreground">
-                      ${cartTotal.toFixed(2)}
-                    </span>
-                  </div>
-                  <Button variant="gold" size="lg" className="w-full" asChild>
-                    <Link to="/user/orders" onClick={() => setIsCartOpen(false)}>
-                      Proceed to Order
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </>
+            <ShoppingCart className="w-5 h-5" />
+            <span className="font-medium">{cartCount} items</span>
+          </Link>
+        </motion.button>
       )}
 
       <Footer />

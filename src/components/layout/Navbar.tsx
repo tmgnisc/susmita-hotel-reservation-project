@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import {
   Menu,
   X,
@@ -13,6 +15,7 @@ import {
   UtensilsCrossed,
   Calendar,
   ChevronDown,
+  ShoppingCart,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,13 +28,16 @@ import {
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { getItemCount } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
+  const cartCount = getItemCount();
 
   const navLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/rooms", label: "Rooms", icon: Bed },
     { href: "/dining", label: "Dining", icon: UtensilsCrossed },
+    { href: "/cart", label: "Cart", icon: ShoppingCart },
   ];
 
   const getDashboardLink = () => {
@@ -71,13 +77,18 @@ export function Navbar() {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`text-sm font-medium transition-colors hover:text-accent ${
+                className={`text-sm font-medium transition-colors hover:text-accent relative ${
                   location.pathname === link.href
                     ? "text-accent"
                     : "text-muted-foreground"
                 }`}
               >
                 {link.label}
+                {link.href === "/cart" && cartCount > 0 && (
+                  <Badge className="absolute -top-2 -right-4 w-5 h-5 p-0 flex items-center justify-center text-xs">
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </Badge>
+                )}
               </Link>
             ))}
           </div>
@@ -169,7 +180,7 @@ export function Navbar() {
                   key={link.href}
                   to={link.href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors relative ${
                     location.pathname === link.href
                       ? "bg-secondary text-accent"
                       : "text-muted-foreground hover:bg-secondary"
@@ -177,6 +188,11 @@ export function Navbar() {
                 >
                   <link.icon className="w-5 h-5" />
                   {link.label}
+                  {link.href === "/cart" && cartCount > 0 && (
+                    <Badge className="ml-auto w-5 h-5 p-0 flex items-center justify-center text-xs">
+                      {cartCount > 9 ? "9+" : cartCount}
+                    </Badge>
+                  )}
                 </Link>
               ))}
               <div className="pt-4 border-t border-border space-y-2">

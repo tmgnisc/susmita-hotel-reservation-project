@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { api, ApiError } from "@/lib/api";
 import {
   Bed,
@@ -46,10 +47,12 @@ export default function RoomDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
+  const { addRoomItem } = useCart();
   const [room, setRoom] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isBooking, setIsBooking] = useState(false);
+  const [addToCartMode, setAddToCartMode] = useState(false);
 
   const [bookingData, setBookingData] = useState({
     checkIn: "",
@@ -131,6 +134,31 @@ export default function RoomDetailPage() {
         description: `This room can accommodate up to ${room.capacity} guests.`,
         variant: "destructive",
       });
+      return;
+    }
+
+    if (addToCartMode) {
+      // Add to cart instead of booking directly
+      addRoomItem(
+        {
+          id: room.id,
+          name: room.name,
+          price: room.price,
+          images: room.images,
+          type: room.type,
+          capacity: room.capacity,
+        },
+        bookingData.checkIn,
+        bookingData.checkOut,
+        parseInt(bookingData.guests)
+      );
+
+      toast({
+        title: "Added to cart!",
+        description: "Room has been added to your cart.",
+      });
+
+      navigate("/cart");
       return;
     }
 
@@ -443,22 +471,39 @@ export default function RoomDetailPage() {
                       </div>
                     )}
 
-                    <Button
-                      type="submit"
-                      variant="gold"
-                      size="lg"
-                      className="w-full"
-                      disabled={isBooking || !isAuthenticated}
-                    >
-                      {isBooking ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Booking...
-                        </>
-                      ) : (
-                        "Book Now"
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        className="flex-1"
+                        onClick={() => {
+                          setAddToCartMode(true);
+                          const form = document.querySelector('form');
+                          if (form) form.requestSubmit();
+                        }}
+                        disabled={isBooking || !isAuthenticated}
+                      >
+                        Add to Cart
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="gold"
+                        size="lg"
+                        className="flex-1"
+                        onClick={() => setAddToCartMode(false)}
+                        disabled={isBooking || !isAuthenticated}
+                      >
+                        {isBooking ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Booking...
+                          </>
+                        ) : (
+                          "Book Now"
+                        )}
+                      </Button>
+                    </div>
 
                     {!isAuthenticated && (
                       <Button
