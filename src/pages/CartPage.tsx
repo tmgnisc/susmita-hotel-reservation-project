@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api, ApiError } from "@/lib/api";
+import PaymentDialog from "@/components/PaymentDialog";
 import {
   ShoppingCart,
   Plus,
@@ -20,6 +21,7 @@ import {
   UtensilsCrossed,
   Loader2,
   ArrowRight,
+  CreditCard,
 } from "lucide-react";
 
 export default function CartPage() {
@@ -40,6 +42,9 @@ export default function CartPage() {
   const foodItems = getFoodItems();
   const roomItems = getRoomItems();
   const total = getTotal();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [createdBookingIds, setCreatedBookingIds] = useState<string[]>([]);
+  const [createdOrderIds, setCreatedOrderIds] = useState<string[]>([]);
 
   const handleCheckout = async () => {
     if (!isAuthenticated) {

@@ -321,6 +321,33 @@ export const api = {
       method: 'DELETE',
     });
   },
+
+  // Payments
+  async createPaymentIntent(data: {
+    amount: number;
+    currency?: string;
+    bookingId?: string;
+    orderId?: string;
+    metadata?: Record<string, string>;
+  }) {
+    return apiRequest<{
+      paymentIntent: { clientSecret: string; id: string };
+      paymentId: string;
+    }>('/payments/create-intent', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async confirmPayment(data: {
+    paymentIntentId: string;
+    paymentId?: string;
+  }) {
+    return apiRequest<{ message: string }>('/payments/confirm', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 export { ApiError };
