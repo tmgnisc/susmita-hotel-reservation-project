@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import RoomsPage from "./pages/RoomsPage";
+import RoomDetailPage from "./pages/RoomDetailPage";
 import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StaffManagement from "./pages/admin/StaffManagement";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/rooms/:id" element={<RoomDetailPage />} />
             <Route path="/dining" element={<DiningPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/staff" element={<StaffManagement />} />

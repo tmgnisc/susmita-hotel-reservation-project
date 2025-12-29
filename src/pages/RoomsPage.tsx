@@ -321,7 +321,7 @@ export default function RoomsPage() {
                   </div>
                   <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-card/90 backdrop-blur text-xs">
                     <Bed className="w-3 h-3" />
-                    Floor {room.floor}
+                    {room.room_number ? `Room ${room.room_number}` : `Floor ${room.floor}`}
                   </div>
                 </div>
               </div>

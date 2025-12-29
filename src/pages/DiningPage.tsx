@@ -312,7 +312,7 @@ export default function DiningPage() {
                     className="flex items-center gap-4 p-4 rounded-xl bg-secondary"
                   >
                     <img
-                      src={item.foodItem.image}
+                      src={item.foodItem.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400"}
                       alt={item.foodItem.name}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
