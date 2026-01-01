@@ -18,6 +18,8 @@ import StaffDashboard from "./pages/staff/StaffDashboard";
 import TableManagement from "./pages/staff/TableManagement";
 import MenuManagement from "./pages/staff/MenuManagement";
 import UserDashboard from "./pages/user/UserDashboard";
+import UserReservations from "./pages/user/UserReservations";
+import UserOrders from "./pages/user/UserOrders";
 import ProfilePage from "./pages/ProfilePage";
 import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
@@ -47,6 +49,8 @@ const App = () => (
             <Route path="/staff/menu" element={<MenuManagement />} />
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/user/profile" element={<ProfilePage />} />
+            <Route path="/user/reservations" element={<UserReservations />} />
+            <Route path="/user/orders" element={<UserOrders />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="*" element={<NotFound />} />
