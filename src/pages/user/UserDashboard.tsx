@@ -145,7 +145,7 @@ export default function UserDashboard() {
         {/* Reservations */}
         <div className="bg-card rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-semibold">Your Reservations</h3>
+            <h3 className="font-display text-lg font-semibold">My Reservations</h3>
             <Link to="/user/reservations" className="text-sm text-accent hover:underline">View all</Link>
           </div>
           {reservations.length === 0 ? (

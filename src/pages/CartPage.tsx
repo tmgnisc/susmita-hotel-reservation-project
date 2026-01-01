@@ -359,16 +359,15 @@ export default function CartPage() {
                 </h2>
 
                 <div className="space-y-4 mb-6">
-                  {roomItems.map((item) => {
-                    const room = item.roomItem!;
-                    const nights = calculateNights(room.checkIn, room.checkOut);
+                  {tableItems.map((item) => {
+                    const table = item.tableItem!;
                     return (
-                      <div key={room.id} className="flex justify-between text-sm">
+                      <div key={table.id} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {room.name} ({nights} {nights === 1 ? "night" : "nights"})
+                          Table {table.tableNumber} Reservation
                         </span>
                         <span className="font-medium">
-                          ${(room.price * nights).toFixed(2)}
+                          $0.00
                         </span>
                       </div>
                     );

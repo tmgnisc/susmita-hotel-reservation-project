@@ -276,8 +276,25 @@ router.post('/orders', async (req, res, next) => {
     // Generate order ID
     const orderId = randomUUID();
     
-    // Use provided userId or null
-    const finalUserId = userId || null;
+    // Use provided userId or create a guest user
+    let finalUserId = userId;
+    if (!finalUserId) {
+      // Create or get a guest user
+      const [guestUsers] = await dbPool.query(
+        "SELECT id FROM users WHERE email = 'guest@restaurant.com' LIMIT 1"
+      );
+      if (guestUsers.length > 0) {
+        finalUserId = guestUsers[0].id;
+      } else {
+        // Create guest user
+        const guestId = randomUUID();
+        await dbPool.query(
+          `INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)`,
+          [guestId, 'guest@restaurant.com', 'Guest User', 'no-password', 'user']
+        );
+        finalUserId = guestId;
+      }
+    }
     
     // Create order
     await dbPool.query(
