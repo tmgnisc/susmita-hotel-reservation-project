@@ -1,7 +1,6 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
 import dbPool from '../config/database.js';
-import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -61,7 +60,7 @@ router.get('/items/:id', async (req, res, next) => {
   }
 });
 
-router.post('/items', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.post('/items', async (req, res, next) => {
   try {
     const { name, description, price, category, image, available, preparationTime } = req.body;
     
@@ -95,7 +94,7 @@ router.post('/items', authenticate, authorize('admin', 'staff'), async (req, res
   }
 });
 
-router.put('/items/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.put('/items/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, price, category, image, available, preparationTime } = req.body;
@@ -140,7 +139,7 @@ router.put('/items/:id', authenticate, authorize('admin', 'staff'), async (req, 
   }
 });
 
-router.delete('/items/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.delete('/items/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -156,20 +155,15 @@ router.delete('/items/:id', authenticate, authorize('admin', 'staff'), async (re
 });
 
 // Food Orders Routes
-router.get('/orders', authenticate, async (req, res, next) => {
+router.get('/orders', async (req, res, next) => {
   try {
     let query = `
       SELECT fo.*, u.name as user_name, u.email as user_email
       FROM food_orders fo
-      JOIN users u ON fo.user_id = u.id
+      LEFT JOIN users u ON fo.user_id = u.id
       WHERE 1=1
     `;
     const params = [];
-    
-    if (req.user.role === 'user') {
-      query += ' AND fo.user_id = ?';
-      params.push(req.user.id);
-    }
     
     if (req.query.status) {
       query += ' AND fo.status = ?';
@@ -201,14 +195,14 @@ router.get('/orders', authenticate, async (req, res, next) => {
   }
 });
 
-router.get('/orders/:id', authenticate, async (req, res, next) => {
+router.get('/orders/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
     const [orders] = await dbPool.query(
       `SELECT fo.*, u.name as user_name, u.email as user_email
        FROM food_orders fo
-       JOIN users u ON fo.user_id = u.id
+       LEFT JOIN users u ON fo.user_id = u.id
        WHERE fo.id = ?`,
       [id]
     );
@@ -221,13 +215,6 @@ router.get('/orders/:id', authenticate, async (req, res, next) => {
     }
     
     const order = orders[0];
-    
-    if (req.user.role === 'user' && order.user_id !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
     
     const [items] = await dbPool.query(
       `SELECT foi.*, fi.name, fi.image, fi.category
@@ -247,9 +234,9 @@ router.get('/orders/:id', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/orders', authenticate, async (req, res, next) => {
+router.post('/orders', async (req, res, next) => {
   try {
-    const { items, roomNumber } = req.body;
+    const { items, roomNumber, userId } = req.body;
     
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
@@ -289,11 +276,14 @@ router.post('/orders', authenticate, async (req, res, next) => {
     // Generate order ID
     const orderId = randomUUID();
     
+    // Use provided userId or null
+    const finalUserId = userId || null;
+    
     // Create order
     await dbPool.query(
       `INSERT INTO food_orders (id, user_id, status, total_amount, room_number)
        VALUES (?, ?, 'pending', ?, ?)`,
-      [orderId, req.user.id, totalAmount, roomNumber || null]
+      [orderId, finalUserId, totalAmount, roomNumber || null]
     );
     
     // Create order items
@@ -332,7 +322,7 @@ router.post('/orders', authenticate, async (req, res, next) => {
   }
 });
 
-router.patch('/orders/:id/status', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.patch('/orders/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;

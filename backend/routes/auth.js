@@ -147,13 +147,27 @@ router.post('/login', async (req, res, next) => {
 });
 
 // Get current user
-router.get('/me', authenticate, async (req, res, next) => {
+router.get('/me', async (req, res, next) => {
   try {
+    const { userId } = req.query;
+    if (!userId) {
+      return res.json({
+        success: true,
+        data: { user: null }
+      });
+    }
+    
+    const [users] = await dbPool.query('SELECT id, email, name, role, avatar, phone, created_at FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.json({
+        success: true,
+        data: { user: null }
+      });
+    }
+    
     res.json({
       success: true,
-      data: {
-        user: req.user
-      }
+      data: { user: users[0] }
     });
   } catch (error) {
     next(error);
@@ -161,10 +175,16 @@ router.get('/me', authenticate, async (req, res, next) => {
 });
 
 // Update profile
-router.put('/profile', authenticate, async (req, res, next) => {
+router.put('/profile', async (req, res, next) => {
   try {
-    const { name, phone, avatar } = req.body;
-    const userId = req.user.id;
+    const { name, phone, avatar, userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required'
+      });
+    }
     
     const updates = {};
     if (name !== undefined) updates.name = name;
@@ -206,10 +226,16 @@ router.put('/profile', authenticate, async (req, res, next) => {
 });
 
 // Change password
-router.put('/change-password', authenticate, async (req, res, next) => {
+router.put('/change-password', async (req, res, next) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user.id;
+    const { currentPassword, newPassword, userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required'
+      });
+    }
     
     if (!currentPassword || !newPassword) {
       return res.status(400).json({

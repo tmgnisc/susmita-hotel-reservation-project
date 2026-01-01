@@ -11,7 +11,6 @@ import {
   User,
   LogOut,
   Home,
-  Bed,
   UtensilsCrossed,
   Calendar,
   ChevronDown,
@@ -35,7 +34,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/rooms", label: "Rooms", icon: Bed },
+    { href: "/tables", label: "Tables", icon: UtensilsCrossed },
     { href: "/dining", label: "Dining", icon: UtensilsCrossed },
     { href: "/cart", label: "Cart", icon: ShoppingCart },
   ];

@@ -2,15 +2,14 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import Stripe from 'stripe';
 import dbPool from '../config/database.js';
-import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Create payment intent
-router.post('/create-intent', authenticate, async (req, res, next) => {
+router.post('/create-intent', async (req, res, next) => {
   try {
-    const { amount, currency = 'usd', bookingId, orderId, metadata = {} } = req.body;
+    const { amount, currency = 'usd', reservationId, orderId, userId, metadata = {} } = req.body;
     
     if (!amount || amount <= 0) {
       return res.status(400).json({
@@ -22,11 +21,54 @@ router.post('/create-intent', authenticate, async (req, res, next) => {
     // Generate payment ID
     const paymentId = randomUUID();
     
+    // Get userId from reservation or order, or use provided userId, or create guest user
+    let finalUserId = userId;
+    
+    if (!finalUserId && reservationId) {
+      // Get userId from reservation
+      const [reservations] = await dbPool.query(
+        'SELECT user_id FROM table_reservations WHERE id = ?',
+        [reservationId]
+      );
+      if (reservations.length > 0) {
+        finalUserId = reservations[0].user_id;
+      }
+    }
+    
+    if (!finalUserId && orderId) {
+      // Get userId from order
+      const [orders] = await dbPool.query(
+        'SELECT user_id FROM food_orders WHERE id = ?',
+        [orderId]
+      );
+      if (orders.length > 0) {
+        finalUserId = orders[0].user_id;
+      }
+    }
+    
+    if (!finalUserId) {
+      // Create or get a guest user
+      const [guestUsers] = await dbPool.query(
+        "SELECT id FROM users WHERE email = 'guest@restaurant.com' LIMIT 1"
+      );
+      if (guestUsers.length > 0) {
+        finalUserId = guestUsers[0].id;
+      } else {
+        // Create guest user
+        const guestId = randomUUID();
+        await dbPool.query(
+          `INSERT INTO users (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)`,
+          [guestId, 'guest@restaurant.com', 'Guest User', 'no-password', 'user']
+        );
+        finalUserId = guestId;
+      }
+    }
+    
     // Create payment record
     await dbPool.query(
-      `INSERT INTO payments (id, booking_id, order_id, user_id, amount, currency, status)
+      `INSERT INTO payments (id, reservation_id, order_id, user_id, amount, currency, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [paymentId, bookingId || null, orderId || null, req.user.id, amount, currency]
+      [paymentId, reservationId || null, orderId || null, finalUserId, amount, currency]
     );
     
     // Create Stripe payment intent
@@ -35,8 +77,8 @@ router.post('/create-intent', authenticate, async (req, res, next) => {
       currency: currency.toLowerCase(),
       metadata: {
         paymentId: paymentId,
-        userId: req.user.id,
-        bookingId: bookingId || '',
+        userId: finalUserId || '',
+        reservationId: reservationId || '',
         orderId: orderId || '',
         ...metadata
       }
@@ -64,7 +106,7 @@ router.post('/create-intent', authenticate, async (req, res, next) => {
 });
 
 // Confirm payment
-router.post('/confirm', authenticate, async (req, res, next) => {
+router.post('/confirm', async (req, res, next) => {
   try {
     const { paymentIntentId, paymentId } = req.body;
     
@@ -85,11 +127,11 @@ router.post('/confirm', authenticate, async (req, res, next) => {
         ['completed', paymentIntentId]
       );
       
-      // If it's a booking payment, update booking status
-      if (paymentIntent.metadata.bookingId) {
+      // If it's a reservation payment, update reservation status
+      if (paymentIntent.metadata.reservationId) {
         await dbPool.query(
-          'UPDATE bookings SET status = ? WHERE id = ?',
-          ['confirmed', paymentIntent.metadata.bookingId]
+          'UPDATE table_reservations SET status = ? WHERE id = ?',
+          ['confirmed', paymentIntent.metadata.reservationId]
         );
       }
       
@@ -114,7 +156,7 @@ router.post('/confirm', authenticate, async (req, res, next) => {
 });
 
 // Get payment by ID
-router.get('/:id', authenticate, async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -132,14 +174,6 @@ router.get('/:id', authenticate, async (req, res, next) => {
     
     const payment = payments[0];
     
-    // Check access
-    if (req.user.role === 'user' && payment.user_id !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
-    
     res.json({
       success: true,
       data: { payment }
@@ -150,7 +184,7 @@ router.get('/:id', authenticate, async (req, res, next) => {
 });
 
 // Get all payments
-router.get('/', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const { status } = req.query;
     

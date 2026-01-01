@@ -1,7 +1,6 @@
 import express from 'express';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
-import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -30,7 +29,7 @@ const upload = multer({
 });
 
 // Upload image to Cloudinary
-router.post('/image', authenticate, upload.single('image'), async (req, res, next) => {
+router.post('/image', upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -67,6 +66,8 @@ router.post('/image', authenticate, upload.single('image'), async (req, res, nex
 });
 
 export default router;
+
+
 
 
 

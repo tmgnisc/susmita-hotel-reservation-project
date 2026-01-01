@@ -6,8 +6,8 @@ import { createDatabase } from './config/database.js';
 // Import routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
-import roomRoutes from './routes/rooms.js';
-import bookingRoutes from './routes/bookings.js';
+import tableRoutes from './routes/tables.js';
+import reservationRoutes from './routes/reservations.js';
 import foodRoutes from './routes/food.js';
 import staffRoutes from './routes/staff.js';
 import paymentRoutes from './routes/payments.js';
@@ -38,8 +38,8 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/bookings', bookingRoutes);
+app.use('/api/tables', tableRoutes);
+app.use('/api/reservations', reservationRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/payments', paymentRoutes);

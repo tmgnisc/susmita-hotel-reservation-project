@@ -13,65 +13,42 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX idx_role (role)
 );
 
--- Rooms Table
-CREATE TABLE IF NOT EXISTS rooms (
+-- Tables Table
+CREATE TABLE IF NOT EXISTS tables (
   id VARCHAR(36) PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  type ENUM('standard', 'deluxe', 'suite', 'penthouse') NOT NULL,
-  price DECIMAL(10, 2) NOT NULL,
+  table_number VARCHAR(20) UNIQUE NOT NULL,
   capacity INT NOT NULL,
-  status ENUM('available', 'booked', 'occupied', 'maintenance') NOT NULL DEFAULT 'available',
+  status ENUM('available', 'reserved', 'occupied', 'maintenance') NOT NULL DEFAULT 'available',
   description TEXT,
-  floor INT NOT NULL,
-  room_number VARCHAR(20) UNIQUE NOT NULL,
+  location VARCHAR(255) COMMENT 'e.g., "Window", "Patio", "Main Hall"',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_type (type),
   INDEX idx_status (status),
-  INDEX idx_room_number (room_number)
+  INDEX idx_table_number (table_number),
+  INDEX idx_capacity (capacity)
 );
 
--- Room Amenities Table (Many-to-Many relationship)
-CREATE TABLE IF NOT EXISTS room_amenities (
+-- Table Reservations Table
+CREATE TABLE IF NOT EXISTS table_reservations (
   id VARCHAR(36) PRIMARY KEY,
-  room_id VARCHAR(36) NOT NULL,
-  amenity VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
-  INDEX idx_room_id (room_id)
-);
-
--- Room Images Table
-CREATE TABLE IF NOT EXISTS room_images (
-  id VARCHAR(36) PRIMARY KEY,
-  room_id VARCHAR(36) NOT NULL,
-  image_url TEXT NOT NULL,
-  display_order INT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
-  INDEX idx_room_id (room_id)
-);
-
--- Bookings Table
-CREATE TABLE IF NOT EXISTS bookings (
-  id VARCHAR(36) PRIMARY KEY,
-  room_id VARCHAR(36) NOT NULL,
+  table_id VARCHAR(36) NOT NULL,
   user_id VARCHAR(36) NOT NULL,
-  check_in DATE NOT NULL,
-  check_out DATE NOT NULL,
-  status ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled') NOT NULL DEFAULT 'pending',
-  total_amount DECIMAL(10, 2) NOT NULL,
+  reservation_date DATE NOT NULL,
+  reservation_time TIME NOT NULL,
+  duration INT DEFAULT 120 COMMENT 'Duration in minutes',
+  status ENUM('pending', 'confirmed', 'seated', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+  total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
   guests INT NOT NULL,
   special_requests TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE RESTRICT,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE RESTRICT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
   INDEX idx_user_id (user_id),
-  INDEX idx_room_id (room_id),
+  INDEX idx_table_id (table_id),
   INDEX idx_status (status),
-  INDEX idx_check_in (check_in),
-  INDEX idx_check_out (check_out)
+  INDEX idx_reservation_date (reservation_date),
+  INDEX idx_reservation_time (reservation_time)
 );
 
 -- Food Items Table
@@ -141,7 +118,7 @@ CREATE TABLE IF NOT EXISTS staff_members (
 -- Payments Table (for Stripe integration)
 CREATE TABLE IF NOT EXISTS payments (
   id VARCHAR(36) PRIMARY KEY,
-  booking_id VARCHAR(36),
+  reservation_id VARCHAR(36),
   order_id VARCHAR(36),
   user_id VARCHAR(36) NOT NULL,
   amount DECIMAL(10, 2) NOT NULL,
@@ -151,7 +128,7 @@ CREATE TABLE IF NOT EXISTS payments (
   status ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
+  FOREIGN KEY (reservation_id) REFERENCES table_reservations(id) ON DELETE SET NULL,
   FOREIGN KEY (order_id) REFERENCES food_orders(id) ON DELETE SET NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
   INDEX idx_user_id (user_id),

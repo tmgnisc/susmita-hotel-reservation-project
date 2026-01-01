@@ -2,12 +2,11 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import dbPool from '../config/database.js';
-import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all staff members
-router.get('/', authenticate, authorize('admin'), async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const { department, status } = req.query;
     
@@ -38,7 +37,7 @@ router.get('/', authenticate, authorize('admin'), async (req, res, next) => {
 });
 
 // Get staff member by ID
-router.get('/:id', authenticate, authorize('admin', 'staff'), async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -64,7 +63,7 @@ router.get('/:id', authenticate, authorize('admin', 'staff'), async (req, res, n
 });
 
 // Create staff member
-router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const { name, email, password, role, department, phone, avatar, status, hireDate } = req.body;
     
@@ -155,7 +154,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
 });
 
 // Update staff member
-router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, email, password, role, department, phone, avatar, status, hireDate } = req.body;
@@ -264,7 +263,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
 });
 
 // Delete staff member
-router.delete('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     

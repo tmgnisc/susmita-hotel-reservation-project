@@ -28,8 +28,8 @@ interface DashboardLayoutProps {
 const adminLinks = [
   { href: "/", label: "Home", icon: Home },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Bookings", icon: Calendar },
-  { href: "/admin/rooms", label: "Rooms", icon: Bed },
+  { href: "/admin/reservations", label: "Reservations", icon: Calendar },
+  { href: "/admin/tables", label: "Tables", icon: UtensilsCrossed },
   { href: "/admin/staff", label: "Staff", icon: Users },
   { href: "/admin/food-orders", label: "Food Orders", icon: UtensilsCrossed },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
@@ -39,8 +39,8 @@ const adminLinks = [
 const staffLinks = [
   { href: "/", label: "Home", icon: Home },
   { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/staff/check-in", label: "Check-in/out", icon: ClipboardList },
-  { href: "/staff/rooms", label: "Room Status", icon: Bed },
+  { href: "/staff/reservations", label: "Reservations", icon: Calendar },
+  { href: "/staff/tables", label: "Table Management", icon: UtensilsCrossed },
   { href: "/staff/menu", label: "Menu Management", icon: UtensilsCrossed },
   { href: "/staff/orders", label: "Food Orders", icon: ShoppingBag },
 ];
@@ -48,7 +48,7 @@ const staffLinks = [
 const userLinks = [
   { href: "/", label: "Home", icon: Home },
   { href: "/user", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/user/bookings", label: "My Bookings", icon: Calendar },
+  { href: "/user/reservations", label: "My Reservations", icon: Calendar },
   { href: "/user/orders", label: "Food Orders", icon: ShoppingBag },
   { href: "/user/profile", label: "Profile", icon: Settings },
 ];

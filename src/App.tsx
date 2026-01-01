@@ -9,11 +9,13 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import RoomsPage from "./pages/RoomsPage";
 import RoomDetailPage from "./pages/RoomDetailPage";
+import TablesPage from "./pages/TablesPage";
+import TableDetailPage from "./pages/TableDetailPage";
 import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import StaffManagement from "./pages/admin/StaffManagement";
 import StaffDashboard from "./pages/staff/StaffDashboard";
-import RoomManagement from "./pages/staff/RoomManagement";
+import TableManagement from "./pages/staff/TableManagement";
 import MenuManagement from "./pages/staff/MenuManagement";
 import UserDashboard from "./pages/user/UserDashboard";
 import ProfilePage from "./pages/ProfilePage";
@@ -35,11 +37,13 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
             <Route path="/rooms/:id" element={<RoomDetailPage />} />
+            <Route path="/tables" element={<TablesPage />} />
+            <Route path="/tables/:id" element={<TableDetailPage />} />
             <Route path="/dining" element={<DiningPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/staff" element={<StaffManagement />} />
             <Route path="/staff" element={<StaffDashboard />} />
-            <Route path="/staff/rooms" element={<RoomManagement />} />
+            <Route path="/staff/tables" element={<TableManagement />} />
             <Route path="/staff/menu" element={<MenuManagement />} />
             <Route path="/user" element={<UserDashboard />} />
             <Route path="/user/profile" element={<ProfilePage />} />

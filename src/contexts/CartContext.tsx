@@ -10,36 +10,35 @@ export interface CartFoodItem {
   preparationTime?: number;
 }
 
-export interface CartRoomItem {
+export interface CartTableItem {
   id: string;
-  name: string;
-  price: number;
-  images?: string[];
-  type: string;
+  tableNumber: string;
   capacity: number;
-  checkIn?: string;
-  checkOut?: string;
+  location?: string;
+  reservationDate?: string;
+  reservationTime?: string;
+  duration?: number;
   guests?: number;
 }
 
 export interface CartItem {
-  type: "food" | "room";
+  type: "food" | "table";
   foodItem?: CartFoodItem;
-  roomItem?: CartRoomItem;
+  tableItem?: CartTableItem;
   quantity: number;
 }
 
 interface CartContextType {
   items: CartItem[];
   addFoodItem: (item: CartFoodItem) => void;
-  addRoomItem: (item: CartRoomItem, checkIn: string, checkOut: string, guests: number) => void;
-  updateQuantity: (itemId: string, type: "food" | "room", delta: number) => void;
-  removeItem: (itemId: string, type: "food" | "room") => void;
+  addTableItem: (item: CartTableItem, reservationDate: string, reservationTime: string, duration: number, guests: number) => void;
+  updateQuantity: (itemId: string, type: "food" | "table", delta: number) => void;
+  removeItem: (itemId: string, type: "food" | "table") => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
   getFoodItems: () => CartItem[];
-  getRoomItems: () => CartItem[];
+  getTableItems: () => CartItem[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -85,20 +84,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addRoomItem = (
-    item: CartRoomItem,
-    checkIn: string,
-    checkOut: string,
+  const addTableItem = (
+    item: CartTableItem,
+    reservationDate: string,
+    reservationTime: string,
+    duration: number,
     guests: number
   ) => {
     setItems((prev) => {
-      // Remove existing room bookings (only one room booking at a time)
-      const filtered = prev.filter((i) => i.type !== "room");
+      // Remove existing table reservations (only one table reservation at a time)
+      const filtered = prev.filter((i) => i.type !== "table");
       return [
         ...filtered,
         {
-          type: "room",
-          roomItem: { ...item, checkIn, checkOut, guests },
+          type: "table",
+          tableItem: { ...item, reservationDate, reservationTime, duration, guests },
           quantity: 1,
         },
       ];
@@ -107,7 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = (
     itemId: string,
-    type: "food" | "room",
+    type: "food" | "table",
     delta: number
   ) => {
     setItems((prev) =>
@@ -117,9 +117,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             if (type === "food" && item.foodItem?.id === itemId) {
               return { ...item, quantity: Math.max(1, item.quantity + delta) };
             }
-            if (type === "room" && item.roomItem?.id === itemId) {
-              return { ...item, quantity: Math.max(1, item.quantity + delta) };
-            }
+            // Table reservations don't have quantity changes
           }
           return item;
         })
@@ -127,15 +125,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const removeItem = (itemId: string, type: "food" | "room") => {
+  const removeItem = (itemId: string, type: "food" | "table") => {
     setItems((prev) =>
       prev.filter((item) => {
         if (item.type === type) {
           if (type === "food") {
             return item.foodItem?.id !== itemId;
           }
-          if (type === "room") {
-            return item.roomItem?.id !== itemId;
+          if (type === "table") {
+            return item.tableItem?.id !== itemId;
           }
         }
         return true;
@@ -152,18 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (item.type === "food" && item.foodItem) {
         return sum + item.foodItem.price * item.quantity;
       }
-      if (item.type === "room" && item.roomItem) {
-        // Calculate nights
-        if (item.roomItem.checkIn && item.roomItem.checkOut) {
-          const checkIn = new Date(item.roomItem.checkIn);
-          const checkOut = new Date(item.roomItem.checkOut);
-          const nights = Math.ceil(
-            (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          return sum + item.roomItem.price * nights * item.quantity;
-        }
-        return sum + item.roomItem.price * item.quantity;
-      }
+      // Table reservations are free (only food orders are charged)
       return sum;
     }, 0);
   };
@@ -176,8 +163,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return items.filter((item) => item.type === "food");
   };
 
-  const getRoomItems = () => {
-    return items.filter((item) => item.type === "room");
+  const getTableItems = () => {
+    return items.filter((item) => item.type === "table");
   };
 
   return (
@@ -185,14 +172,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         addFoodItem,
-        addRoomItem,
+        addTableItem,
         updateQuantity,
         removeItem,
         clearCart,
         getTotal,
         getItemCount,
         getFoodItems,
-        getRoomItems,
+        getTableItems,
       }}
     >
       {children}
@@ -207,4 +194,6 @@ export function useCart() {
   }
   return context;
 }
+
+
 

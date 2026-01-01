@@ -31,25 +31,25 @@ const amenities = [
 ];
 
 export default function LandingPage() {
-  const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
+  const [featuredTables, setFeaturedTables] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadRooms = async () => {
+    const loadTables = async () => {
       try {
         setIsLoading(true);
-        const response = await api.getRooms({ status: "available" });
-        // Get first 3 available rooms
-        setFeaturedRooms((response.rooms || []).slice(0, 3));
+        const response = await api.getTables({ status: "available" });
+        // Get first 6 available tables
+        setFeaturedTables((response.tables || []).slice(0, 6));
       } catch (error) {
-        console.error("Failed to load rooms:", error);
-        setFeaturedRooms([]);
+        console.error("Failed to load tables:", error);
+        setFeaturedTables([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadRooms();
+    loadTables();
   }, []);
 
   return (
@@ -168,7 +168,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Booking Bar */}
+      {/* Reservation Bar */}
       <section className="relative -mt-12 z-10 container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -180,7 +180,7 @@ export default function LandingPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Check-in
+                Date
               </label>
               <input
                 type="date"
@@ -190,10 +190,10 @@ export default function LandingPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Check-out
+                Time
               </label>
               <input
-                type="date"
+                type="time"
                 className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
@@ -211,7 +211,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-end">
               <Button variant="gold" size="lg" className="w-full" asChild>
-                <Link to="/rooms">Check Availability</Link>
+                <Link to="/tables">Find Table</Link>
               </Button>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Featured Rooms */}
+      {/* Featured Tables */}
       <section className="py-24 bg-secondary">
         <div className="container mx-auto px-4">
           <motion.div
@@ -265,15 +265,15 @@ export default function LandingPage() {
           >
             <div>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Featured <span className="text-gradient-gold">Accommodations</span>
+                Available <span className="text-gradient-gold">Tables</span>
               </h2>
               <p className="text-muted-foreground max-w-xl">
-                From elegant suites to spacious penthouses, discover your perfect retreat.
+                Reserve your perfect table for an unforgettable dining experience.
               </p>
             </div>
             <Button variant="outline" asChild>
-              <Link to="/rooms">
-                View All Rooms
+              <Link to="/tables">
+                View All Tables
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </Button>
@@ -283,75 +283,66 @@ export default function LandingPage() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-8 h-8 animate-spin text-accent" />
             </div>
-          ) : featuredRooms.length === 0 ? (
+          ) : featuredTables.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">No rooms available at the moment.</p>
+              <p className="text-muted-foreground">No tables available at the moment.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredRooms.map((room, index) => (
+              {featuredTables.map((table, index) => (
               <motion.div
-                key={room.id}
+                key={table.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 className="bg-card rounded-2xl overflow-hidden group hover:shadow-lg transition-all"
               >
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={room.images?.[0] || "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800"}
-                    alt={room.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                <div className="relative h-64 overflow-hidden bg-gradient-to-br from-accent/20 to-primary/20">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Utensils className="w-24 h-24 text-accent/30" />
+                  </div>
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 rounded-full bg-card/90 backdrop-blur text-xs font-medium capitalize">
-                      {room.type}
+                    <span className="px-3 py-1 rounded-full bg-card/90 backdrop-blur text-xs font-medium">
+                      Table {table.table_number}
                     </span>
                   </div>
                   <div className="absolute top-4 right-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        room.status === "available"
+                        table.status === "available"
                           ? "bg-success/20 text-success"
-                          : "bg-warning/20 text-warning"
+                          : table.status === "reserved"
+                          ? "bg-warning/20 text-warning"
+                          : "bg-destructive/20 text-destructive"
                       }`}
                     >
-                      {room.status === "available" ? "Available" : "Booked"}
+                      {table.status === "available" ? "Available" : table.status === "reserved" ? "Reserved" : "Occupied"}
                     </span>
                   </div>
                 </div>
                 <div className="p-6">
                   <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-                    {room.name}
+                    Table {table.table_number}
                   </h3>
                   <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {room.description}
+                    {table.description || "Perfect for your dining experience"}
                   </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {room.amenities?.slice(0, 3).map((amenity: string) => (
-                      <span
-                        key={amenity}
-                        className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                    {room.amenities && room.amenities.length > 3 && (
-                      <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">
-                        +{room.amenities.length - 3} more
-                      </span>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>{table.capacity} guests</span>
+                    </div>
+                    {table.location && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span>{table.location}</span>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-2xl font-display font-bold text-foreground">
-                        ${room.price}
-                      </span>
-                      <span className="text-muted-foreground text-sm"> / night</span>
-                    </div>
+                  <div className="flex items-center justify-end">
                     <Button variant="gold" size="sm" asChild>
-                      <Link to={`/rooms/${room.id}`}>Book Now</Link>
+                      <Link to={`/tables/${table.id}`}>Reserve Now</Link>
                     </Button>
                   </div>
                 </div>

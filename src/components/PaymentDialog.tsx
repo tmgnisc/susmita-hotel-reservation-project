@@ -19,7 +19,9 @@ import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
+  import.meta.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 
+  ""
 );
 
 interface PaymentDialogProps {
@@ -27,7 +29,7 @@ interface PaymentDialogProps {
   onOpenChange: (open: boolean) => void;
   amount: number;
   onSuccess: () => void;
-  bookingIds?: string[];
+  reservationIds?: string[];
   orderIds?: string[];
 }
 
@@ -35,32 +37,34 @@ function PaymentForm({
   amount,
   onSuccess,
   onClose,
-  bookingIds,
+  reservationIds,
   orderIds,
 }: {
   amount: number;
   onSuccess: () => void;
   onClose: () => void;
-  bookingIds?: string[];
+  reservationIds?: string[];
   orderIds?: string[];
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     const createIntent = async () => {
+      setIsLoading(true);
       try {
         const response = await api.createPaymentIntent({
           amount,
           currency: "usd",
-          bookingId: bookingIds?.[0],
+          reservationId: reservationIds?.[0],
           orderId: orderIds?.[0],
           metadata: {
-            bookingIds: bookingIds?.join(",") || "",
+            reservationIds: reservationIds?.join(",") || "",
             orderIds: orderIds?.join(",") || "",
           },
         });
@@ -75,13 +79,17 @@ function PaymentForm({
           });
         }
         onClose();
+      } finally {
+        setIsLoading(false);
       }
     };
 
     if (amount > 0 && !clientSecret) {
       createIntent();
+    } else {
+      setIsLoading(false);
     }
-  }, [amount, bookingIds, orderIds]);
+  }, [amount, reservationIds, orderIds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,11 +165,33 @@ function PaymentForm({
     },
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <p className="text-muted-foreground">Initializing payment...</p>
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <p className="text-destructive">Failed to initialize payment</p>
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <div className="p-4 border rounded-lg bg-secondary/50">
-          <CardElement options={cardElementOptions} />
+          {stripe && elements && (
+            <CardElement options={cardElementOptions} />
+          )}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Lock className="w-4 h-4" />
@@ -183,7 +213,7 @@ function PaymentForm({
           <Button
             type="submit"
             variant="gold"
-            disabled={!stripe || isProcessing || !clientSecret}
+            disabled={!stripe || !elements || isProcessing || !clientSecret}
           >
             {isProcessing ? (
               <>
@@ -208,12 +238,34 @@ export default function PaymentDialog({
   onOpenChange,
   amount,
   onSuccess,
-  bookingIds,
+  reservationIds,
   orderIds,
 }: PaymentDialogProps) {
+  const publishableKey = 
+    import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
+    import.meta.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Payment Configuration Error</DialogTitle>
+            <DialogDescription>
+              Stripe publishable key is not configured. Please add VITE_STRIPE_PUBLISHABLE_KEY to your .env file.
+            </DialogDescription>
+          </DialogHeader>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Complete Payment</DialogTitle>
           <DialogDescription>
@@ -221,7 +273,14 @@ export default function PaymentDialog({
           </DialogDescription>
         </DialogHeader>
         {open && amount > 0 && stripePromise && (
-          <Elements stripe={stripePromise}>
+          <Elements 
+            stripe={stripePromise}
+            options={{
+              appearance: {
+                theme: 'stripe',
+              },
+            }}
+          >
             <PaymentForm
               amount={amount}
               onSuccess={() => {
@@ -229,7 +288,7 @@ export default function PaymentDialog({
                 onOpenChange(false);
               }}
               onClose={() => onOpenChange(false)}
-              bookingIds={bookingIds}
+              reservationIds={reservationIds}
               orderIds={orderIds}
             />
           </Elements>

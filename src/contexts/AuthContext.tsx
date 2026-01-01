@@ -21,24 +21,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check if user is already logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
+      // First, try to restore user from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setIsLoading(false);
+          return;
+        } catch (error) {
+          // Invalid stored data, remove it
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Fallback: try token-based auth if token exists
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await api.getCurrentUser();
-          if (response.user) {
-            setUser({
-              id: response.user.id,
-              email: response.user.email,
-              name: response.user.name,
-              role: response.user.role,
-              avatar: response.user.avatar,
-              phone: response.user.phone,
-              createdAt: response.user.created_at || response.user.createdAt,
-            });
+          const userId = localStorage.getItem('userId');
+          if (userId) {
+            const response = await api.getCurrentUser();
+            if (response.user) {
+              const userData = {
+                id: response.user.id,
+                email: response.user.email,
+                name: response.user.name,
+                role: response.user.role,
+                avatar: response.user.avatar,
+                phone: response.user.phone,
+                createdAt: response.user.created_at || response.user.createdAt,
+              };
+              setUser(userData);
+              // Store user in localStorage for persistence
+              localStorage.setItem('user', JSON.stringify(userData));
+            }
           }
         } catch (error) {
           // Token is invalid, remove it
           localStorage.removeItem('token');
+          localStorage.removeItem('userId');
         }
       }
       setIsLoading(false);
@@ -62,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           createdAt: response.user.created_at || response.user.createdAt,
         };
         setUser(userData);
+        // Store user in localStorage for persistence
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.id);
         return { success: true, user: userData };
       }
       
@@ -81,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await api.register(email, password, name, phone);
       
       if (response.user && response.token) {
-        setUser({
+        const userData = {
           id: response.user.id,
           email: response.user.email,
           name: response.user.name,
@@ -89,7 +114,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar: response.user.avatar,
           phone: response.user.phone,
           createdAt: response.user.created_at || response.user.createdAt,
-        });
+        };
+        setUser(userData);
+        // Store user in localStorage for persistence
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.id);
         return { success: true };
       }
       
@@ -104,6 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userId');
     setUser(null);
   };
 
@@ -116,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (response.user) {
-        setUser({
+        const userData = {
           id: response.user.id,
           email: response.user.email,
           name: response.user.name,
@@ -124,7 +155,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar: response.user.avatar,
           phone: response.user.phone,
           createdAt: response.user.created_at || response.user.createdAt,
-        });
+        };
+        setUser(userData);
+        // Update stored user in localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.id);
         return { success: true };
       }
       

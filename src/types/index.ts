@@ -10,36 +10,37 @@ export interface User {
   createdAt: string;
 }
 
-export type RoomType = "standard" | "deluxe" | "suite" | "penthouse";
-export type RoomStatus = "available" | "booked" | "occupied" | "maintenance";
+export type TableStatus = "available" | "reserved" | "occupied" | "maintenance";
 
-export interface Room {
+export interface Table {
   id: string;
-  name: string;
-  type: RoomType;
-  price: number;
+  tableNumber: string;
   capacity: number;
-  status: RoomStatus;
-  description: string;
-  amenities: string[];
-  images: string[];
-  floor: number;
-  roomNumber: string;
+  status: TableStatus;
+  description?: string;
+  location?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled";
+export type ReservationStatus = "pending" | "confirmed" | "seated" | "completed" | "cancelled";
 
-export interface Booking {
+export interface TableReservation {
   id: string;
-  roomId: string;
+  tableId: string;
   userId: string;
-  checkIn: string;
-  checkOut: string;
-  status: BookingStatus;
+  reservationDate: string;
+  reservationTime: string;
+  duration: number;
+  status: ReservationStatus;
   totalAmount: number;
   guests: number;
   specialRequests?: string;
   createdAt: string;
+  updatedAt: string;
+  tableNumber?: string;
+  capacity?: number;
+  location?: string;
 }
 
 export type FoodCategory = "appetizer" | "main" | "dessert" | "beverage";

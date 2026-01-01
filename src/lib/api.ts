@@ -86,7 +86,11 @@ export const api = {
   },
 
   async getCurrentUser() {
-    return apiRequest<{ user: any }>('/auth/me');
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new ApiError('No user ID found', 401);
+    }
+    return apiRequest<{ user: any }>(`/auth/me?userId=${userId}`);
   },
 
   async updateProfile(updates: { name?: string; phone?: string; avatar?: string }) {
@@ -132,79 +136,74 @@ export const api = {
     return data.data;
   },
 
-  // Rooms
-  async getRooms(filters?: { type?: string; status?: string; minPrice?: number; maxPrice?: number }) {
+  // Tables
+  async getTables(filters?: { status?: string; minCapacity?: number; maxCapacity?: number }) {
     const params = new URLSearchParams();
-    if (filters?.type) params.append('type', filters.type);
     if (filters?.status) params.append('status', filters.status);
-    if (filters?.minPrice) params.append('minPrice', filters.minPrice.toString());
-    if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+    if (filters?.minCapacity) params.append('minCapacity', filters.minCapacity.toString());
+    if (filters?.maxCapacity) params.append('maxCapacity', filters.maxCapacity.toString());
     
     const query = params.toString();
-    return apiRequest<{ rooms: any[] }>(`/rooms${query ? `?${query}` : ''}`);
+    return apiRequest<{ tables: any[] }>(`/tables${query ? `?${query}` : ''}`);
   },
 
-  async getRoom(id: string) {
-    return apiRequest<{ room: any }>(`/rooms/${id}`);
+  async getTable(id: string) {
+    return apiRequest<{ table: any }>(`/tables/${id}`);
   },
 
-  async createRoom(room: {
-    name: string;
-    type: string;
-    price: number;
+  async createTable(table: {
+    tableNumber: string;
     capacity: number;
-    status: string;
+    status?: string;
     description?: string;
-    floor: number;
-    roomNumber: string;
-    amenities?: string[];
-    images?: string[];
+    location?: string;
   }) {
-    return apiRequest<{ room: any }>('/rooms', {
+    return apiRequest<{ table: any }>('/tables', {
       method: 'POST',
-      body: JSON.stringify(room),
+      body: JSON.stringify(table),
     });
   },
 
-  async updateRoom(id: string, room: {
-    name?: string;
-    type?: string;
-    price?: number;
+  async updateTable(id: string, table: {
+    tableNumber?: string;
     capacity?: number;
     status?: string;
     description?: string;
-    floor?: number;
-    roomNumber?: string;
-    amenities?: string[];
-    images?: string[];
+    location?: string;
   }) {
-    return apiRequest<{ room: any }>(`/rooms/${id}`, {
+    return apiRequest<{ table: any }>(`/tables/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(room),
+      body: JSON.stringify(table),
     });
   },
 
-  async deleteRoom(id: string) {
-    return apiRequest<{ message: string }>(`/rooms/${id}`, {
+  async deleteTable(id: string) {
+    return apiRequest<{ message: string }>(`/tables/${id}`, {
       method: 'DELETE',
     });
   },
 
-  // Bookings
-  async getBookings() {
-    return apiRequest<{ bookings: any[] }>('/bookings');
+  // Reservations
+  async getReservations(filters?: { status?: string; date?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.date) params.append('date', filters.date);
+    
+    const query = params.toString();
+    return apiRequest<{ reservations: any[] }>(`/reservations${query ? `?${query}` : ''}`);
   },
 
-  async createBooking(booking: {
-    roomId: string;
-    checkIn: string;
-    checkOut: string;
+  async createReservation(reservation: {
+    tableId: string;
+    reservationDate: string;
+    reservationTime: string;
+    duration?: number;
     guests: number;
     specialRequests?: string;
   }) {
-    return apiRequest<{ booking: any }>('/bookings', {
+    return apiRequest<{ reservation: any }>('/reservations', {
       method: 'POST',
-      body: JSON.stringify(booking),
+      body: JSON.stringify(reservation),
     });
   },
 
@@ -258,9 +257,14 @@ export const api = {
     });
   },
 
+  async getFoodOrders() {
+    return apiRequest<{ orders: any[] }>('/food/orders');
+  },
+
   async createFoodOrder(order: {
     items: { foodItemId: string; quantity: number }[];
     roomNumber?: string;
+    userId?: string;
   }) {
     return apiRequest<{ order: any }>('/food/orders', {
       method: 'POST',
@@ -326,7 +330,7 @@ export const api = {
   async createPaymentIntent(data: {
     amount: number;
     currency?: string;
-    bookingId?: string;
+    reservationId?: string;
     orderId?: string;
     metadata?: Record<string, string>;
   }) {
@@ -347,6 +351,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  async getPayments() {
+    return apiRequest<{ payments: any[] }>('/payments');
   },
 };
 

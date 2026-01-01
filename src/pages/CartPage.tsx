@@ -17,7 +17,6 @@ import {
   Trash2,
   Calendar,
   Users,
-  Bed,
   UtensilsCrossed,
   Loader2,
   ArrowRight,
@@ -35,15 +34,15 @@ export default function CartPage() {
     clearCart,
     getTotal,
     getFoodItems,
-    getRoomItems,
+    getTableItems,
   } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const foodItems = getFoodItems();
-  const roomItems = getRoomItems();
+  const tableItems = getTableItems();
   const total = getTotal();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [createdBookingIds, setCreatedBookingIds] = useState<string[]>([]);
+  const [createdReservationIds, setCreatedReservationIds] = useState<string[]>([]);
   const [createdOrderIds, setCreatedOrderIds] = useState<string[]>([]);
 
   const handleCheckout = async () => {
@@ -69,20 +68,21 @@ export default function CartPage() {
     setIsProcessing(true);
 
     try {
-      const bookingIds: string[] = [];
+      const reservationIds: string[] = [];
       const orderIds: string[] = [];
 
-      // Create room bookings first
-      for (const roomItem of roomItems) {
-        if (roomItem.roomItem?.checkIn && roomItem.roomItem.checkOut) {
-          const booking = await api.createBooking({
-            roomId: roomItem.roomItem.id,
-            checkIn: roomItem.roomItem.checkIn,
-            checkOut: roomItem.roomItem.checkOut,
-            guests: roomItem.roomItem.guests || 1,
+      // Create table reservations first
+      for (const tableItem of tableItems) {
+        if (tableItem.tableItem?.reservationDate && tableItem.tableItem.reservationTime) {
+          const reservation = await api.createReservation({
+            tableId: tableItem.tableItem.id,
+            reservationDate: tableItem.tableItem.reservationDate,
+            reservationTime: tableItem.tableItem.reservationTime,
+            duration: tableItem.tableItem.duration || 120,
+            guests: tableItem.tableItem.guests || 1,
           });
-          if (booking.booking?.id) {
-            bookingIds.push(booking.booking.id);
+          if (reservation.reservation?.id) {
+            reservationIds.push(reservation.reservation.id);
           }
         }
       }
@@ -100,7 +100,7 @@ export default function CartPage() {
         }
       }
 
-      setCreatedBookingIds(bookingIds);
+      setCreatedReservationIds(reservationIds);
       setCreatedOrderIds(orderIds);
       setShowPaymentDialog(true);
     } catch (error) {
@@ -119,23 +119,15 @@ export default function CartPage() {
   const handlePaymentSuccess = () => {
     toast({
       title: "Order placed successfully!",
-      description: "Your bookings and orders have been confirmed.",
+      description: "Your reservations and orders have been confirmed.",
     });
 
     clearCart();
-    setCreatedBookingIds([]);
+    setCreatedReservationIds([]);
     setCreatedOrderIds([]);
     navigate("/user");
   };
 
-  const calculateNights = (checkIn?: string, checkOut?: string) => {
-    if (!checkIn || !checkOut) return 1;
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
-    return Math.ceil(
-      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-  };
 
   if (items.length === 0) {
     return (
@@ -148,12 +140,12 @@ export default function CartPage() {
               Your Cart is Empty
             </h1>
             <p className="text-muted-foreground mb-8">
-              Add rooms or food items to your cart to get started.
+              Add tables or food items to your cart to get started.
             </p>
             <div className="flex gap-4 justify-center">
               <Button variant="gold" asChild>
-                <Link to="/rooms">
-                  Browse Rooms
+                <Link to="/tables">
+                  Browse Tables
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
@@ -180,65 +172,66 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Room Bookings */}
-              {roomItems.length > 0 && (
+              {/* Table Reservations */}
+              {tableItems.length > 0 && (
                 <div className="bg-card rounded-2xl p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-6">
-                    <Bed className="w-5 h-5 text-accent" />
+                    <UtensilsCrossed className="w-5 h-5 text-accent" />
                     <h2 className="font-display text-xl font-bold text-foreground">
-                      Room Bookings
+                      Table Reservations
                     </h2>
                   </div>
-                  {roomItems.map((item) => {
-                    const room = item.roomItem!;
-                    const nights = calculateNights(room.checkIn, room.checkOut);
-                    const subtotal = room.price * nights;
+                  {tableItems.map((item) => {
+                    const table = item.tableItem!;
 
                     return (
                       <motion.div
-                        key={room.id}
+                        key={table.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="border-b border-border pb-6 mb-6 last:border-0 last:pb-0 last:mb-0"
                       >
                         <div className="flex gap-4">
-                          <div className="w-24 h-24 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                            <img
-                              src={room.images?.[0] || "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400"}
-                              alt={room.name}
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="w-24 h-24 rounded-lg overflow-hidden bg-secondary flex-shrink-0 flex items-center justify-center">
+                            <UtensilsCrossed className="w-12 h-12 text-accent/30" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="font-semibold text-foreground mb-1">
-                                  {room.name}
+                                  Table {table.tableNumber}
                                 </h3>
-                                <Badge variant="outline" className="capitalize mb-2">
-                                  {room.type}
-                                </Badge>
+                                {table.location && (
+                                  <Badge variant="outline" className="mb-2">
+                                    {table.location}
+                                  </Badge>
+                                )}
                                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-2">
-                                  {room.checkIn && (
+                                  {table.reservationDate && (
                                     <div className="flex items-center gap-1">
                                       <Calendar className="w-4 h-4" />
                                       <span>
-                                        {new Date(room.checkIn).toLocaleDateString()}
+                                        {new Date(table.reservationDate).toLocaleDateString()}
                                       </span>
                                     </div>
                                   )}
-                                  {room.checkOut && (
+                                  {table.reservationTime && (
                                     <div className="flex items-center gap-1">
                                       <Calendar className="w-4 h-4" />
                                       <span>
-                                        {new Date(room.checkOut).toLocaleDateString()}
+                                        {new Date(`2000-01-01T${table.reservationTime}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </span>
                                     </div>
                                   )}
-                                  {room.guests && (
+                                  {table.guests && (
                                     <div className="flex items-center gap-1">
                                       <Users className="w-4 h-4" />
-                                      <span>{room.guests} Guests</span>
+                                      <span>{table.guests} Guests</span>
+                                    </div>
+                                  )}
+                                  {table.capacity && (
+                                    <div className="flex items-center gap-1">
+                                      <span>Capacity: {table.capacity}</span>
                                     </div>
                                   )}
                                 </div>
@@ -246,7 +239,7 @@ export default function CartPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeItem(room.id, "room")}
+                                onClick={() => removeItem(table.id, "table")}
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
@@ -254,10 +247,10 @@ export default function CartPage() {
                             <div className="flex items-center justify-between mt-4">
                               <div>
                                 <p className="text-sm text-muted-foreground">
-                                  {nights} {nights === 1 ? "night" : "nights"} × ${room.price}
+                                  Table reservation (free)
                                 </p>
                                 <p className="text-lg font-bold text-foreground mt-1">
-                                  ${subtotal.toFixed(2)}
+                                  $0.00
                                 </p>
                               </div>
                             </div>
@@ -439,7 +432,7 @@ export default function CartPage() {
                 )}
 
                 <Button variant="ghost" size="sm" className="w-full mt-2" asChild>
-                  <Link to="/rooms">Continue Shopping</Link>
+                  <Link to="/tables">Continue Shopping</Link>
                 </Button>
               </div>
             </div>
@@ -452,7 +445,7 @@ export default function CartPage() {
         onOpenChange={setShowPaymentDialog}
         amount={total}
         onSuccess={handlePaymentSuccess}
-        bookingIds={createdBookingIds}
+        reservationIds={createdReservationIds}
         orderIds={createdOrderIds}
       />
 
