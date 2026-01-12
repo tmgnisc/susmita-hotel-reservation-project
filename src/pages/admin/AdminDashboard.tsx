@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Calendar, Users, UtensilsCrossed, DollarSign, TrendingUp, CreditCard, Loader2, CheckCircle } from "lucide-react";
+import { Calendar, Users, UtensilsCrossed, DollarSign, TrendingUp, CreditCard, Loader2, CheckCircle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,7 +25,7 @@ export default function AdminDashboard() {
         const [reservationsResponse, ordersResponse, paymentsResponse] = await Promise.all([
           api.getReservations(),
           api.getFoodOrders(),
-          api.getPayments().catch(() => ({ payments: [] })), // Handle if payments endpoint fails
+          api.getPayments().catch(() => ({ payments: [] })),
         ]);
         
         setReservations(reservationsResponse.reservations || []);
@@ -43,23 +45,36 @@ export default function AdminDashboard() {
     };
 
     loadData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
   }, [toast]);
 
   // Calculate stats
   const totalReservations = reservations.length;
   const confirmedReservations = reservations.filter((r) => r.status === 'confirmed').length;
+  const pendingReservations = reservations.filter((r) => r.status === 'pending').length;
+  
   const totalRevenue = payments
     .filter((p) => p.status === 'completed')
     .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+  
+  const foodRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+  
   const activeReservations = reservations.filter(
     (r) => !['cancelled', 'completed'].includes(r.status)
   ).length;
+  
+  const activeOrders = orders.filter(
+    (o) => !['cancelled', 'delivered'].includes(o.status)
+  ).length;
 
   const statCards = [
-    { label: "Total Reservations", value: totalReservations, icon: Calendar, change: "+12%" },
-    { label: "Confirmed Reservations", value: confirmedReservations, icon: UtensilsCrossed, change: "+5%" },
-    { label: "Total Revenue", value: `$${totalRevenue.toFixed(0)}`, icon: DollarSign, change: "+18%" },
-    { label: "Active Reservations", value: activeReservations, icon: Users, change: "+8%" },
+    { label: "Total Reservations", value: totalReservations, icon: Calendar, change: `${pendingReservations} pending`, subValue: pendingReservations },
+    { label: "Active Orders", value: activeOrders, icon: UtensilsCrossed, change: `$${foodRevenue.toFixed(2)} revenue`, subValue: orders.length },
+    { label: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, change: `${payments.length} payments`, subValue: totalRevenue },
+    { label: "Active Reservations", value: activeReservations, icon: Users, change: `${confirmedReservations} confirmed`, subValue: confirmedReservations },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -131,10 +146,70 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Reservations Status Chart */}
+          <div className="bg-card rounded-xl p-6 shadow-sm">
+            <h3 className="font-display text-lg font-semibold mb-4">Reservations by Status</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Pending', value: pendingReservations },
+                    { name: 'Confirmed', value: confirmedReservations },
+                    { name: 'Seated', value: reservations.filter(r => r.status === 'seated').length },
+                    { name: 'Completed', value: reservations.filter(r => r.status === 'completed').length },
+                  ].filter(item => item.value > 0)}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {COLORS.map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Orders Status Chart */}
+          <div className="bg-card rounded-xl p-6 shadow-sm">
+            <h3 className="font-display text-lg font-semibold mb-4">Food Orders by Status</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart
+                data={[
+                  { name: 'Pending', count: orders.filter(o => o.status === 'pending').length },
+                  { name: 'Preparing', count: orders.filter(o => o.status === 'preparing').length },
+                  { name: 'Ready', count: orders.filter(o => o.status === 'ready').length },
+                  { name: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
+                ]}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#d4a254" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         {/* Recent Reservations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-card rounded-xl p-6 shadow-sm">
-            <h3 className="font-display text-lg font-semibold mb-4">Recent Reservations</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-semibold">Recent Reservations</h3>
+              <Link to="/admin/reservations">
+                <Button variant="ghost" size="sm">
+                  View All <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
             {reservations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <UtensilsCrossed className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -171,7 +246,14 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-card rounded-xl p-6 shadow-sm">
-            <h3 className="font-display text-lg font-semibold mb-4">Recent Payments</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-semibold">Recent Payments</h3>
+              <Link to="/admin/food-orders">
+                <Button variant="ghost" size="sm">
+                  View Orders <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
             {payments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <CreditCard className="w-12 h-12 mx-auto mb-2 opacity-50" />

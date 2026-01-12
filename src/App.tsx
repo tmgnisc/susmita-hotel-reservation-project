@@ -14,6 +14,11 @@ import TablesPage from "./pages/TablesPage";
 import TableDetailPage from "./pages/TableDetailPage";
 import DiningPage from "./pages/DiningPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminReservations from "./pages/admin/AdminReservations";
+import AdminTables from "./pages/admin/AdminTables";
+import AdminFoodOrders from "./pages/admin/AdminFoodOrders";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminSettings from "./pages/admin/AdminSettings";
 import StaffManagement from "./pages/admin/StaffManagement";
 import StaffDashboard from "./pages/staff/StaffDashboard";
 import StaffReservations from "./pages/staff/StaffReservations";
@@ -80,6 +85,31 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/reservations" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminReservations />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/tables" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminTables />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/food-orders" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminFoodOrders />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/analytics" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminSettings />
               </ProtectedRoute>
             } />
             <Route path="/admin/staff" element={
