@@ -17,7 +17,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminTables from "./pages/admin/AdminTables";
 import AdminFoodOrders from "./pages/admin/AdminFoodOrders";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import StaffManagement from "./pages/admin/StaffManagement";
 import StaffDashboard from "./pages/staff/StaffDashboard";
@@ -100,11 +99,6 @@ const App = () => (
             <Route path="/admin/food-orders" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminFoodOrders />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/analytics" element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/admin/settings" element={

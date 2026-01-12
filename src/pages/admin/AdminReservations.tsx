@@ -44,6 +44,7 @@ import {
   Download,
   RefreshCw,
   Plus,
+  Activity,
 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 
@@ -58,6 +59,8 @@ export default function AdminReservations() {
   const [dateFilter, setDateFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const [formData, setFormData] = useState({
     tableId: "",
@@ -73,7 +76,19 @@ export default function AdminReservations() {
   useEffect(() => {
     loadReservations();
     loadTables();
-  }, []);
+    
+    // Auto-refresh every 15 seconds if enabled
+    let interval: NodeJS.Timeout;
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        loadReservations();
+      }, 15000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh]);
 
   const loadTables = async () => {
     try {
@@ -88,11 +103,19 @@ export default function AdminReservations() {
     filterReservations();
   }, [reservations, searchTerm, statusFilter, dateFilter]);
 
-  const loadReservations = async () => {
+  const loadReservations = async (showToast = false) => {
     try {
       setIsLoading(true);
       const response = await api.getReservations();
       setReservations(response.reservations || []);
+      setLastUpdated(new Date());
+      
+      if (showToast) {
+        toast({
+          title: "Refreshed",
+          description: "Reservations data updated",
+        });
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         toast({
@@ -278,22 +301,38 @@ export default function AdminReservations() {
             <h1 className="font-display text-3xl font-bold text-foreground">
               Reservations Management
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground flex items-center gap-2">
               View and manage all table reservations
+              <span className="text-xs">
+                • Last updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+              {autoRefresh && (
+                <span className="text-xs flex items-center gap-1 text-success">
+                  • <div className="w-2 h-2 bg-success rounded-full animate-pulse" /> Auto-refresh ON
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={loadReservations}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+            >
+              <Activity className={`w-4 h-4 mr-2 ${autoRefresh ? 'text-success' : ''}`} />
+              {autoRefresh ? 'Auto ON' : 'Auto OFF'}
+            </Button>
+            <Button variant="outline" onClick={() => loadReservations(true)} disabled={isLoading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline" onClick={exportToCSV}>
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              Export
             </Button>
             <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Create Reservation
+              Create
             </Button>
           </div>
         </div>

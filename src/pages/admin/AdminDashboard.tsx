@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Calendar, Users, UtensilsCrossed, DollarSign, TrendingUp, CreditCard, Loader2, CheckCircle, ArrowRight } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Calendar, Users, UtensilsCrossed, DollarSign, TrendingUp, CreditCard, Loader2, CheckCircle, ArrowRight, RefreshCw, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
@@ -15,22 +15,27 @@ export default function AdminDashboard() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [tables, setTables] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        setIsLoading(true);
+        if (isLoading) setIsLoading(true);
         
-        const [reservationsResponse, ordersResponse, paymentsResponse] = await Promise.all([
+        const [reservationsResponse, ordersResponse, paymentsResponse, tablesResponse] = await Promise.all([
           api.getReservations(),
           api.getFoodOrders(),
           api.getPayments().catch(() => ({ payments: [] })),
+          api.getTables().catch(() => ({ tables: [] })),
         ]);
         
         setReservations(reservationsResponse.reservations || []);
         setOrders(ordersResponse.orders || []);
         setPayments(paymentsResponse.payments || []);
+        setTables(tablesResponse.tables || []);
+        setLastUpdated(new Date());
       } catch (error) {
         if (error instanceof ApiError) {
           toast({
@@ -47,9 +52,44 @@ export default function AdminDashboard() {
     loadData();
     
     // Refresh data every 30 seconds
-    const interval = setInterval(loadData, 30000);
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000);
     return () => clearInterval(interval);
   }, [toast]);
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      const [reservationsResponse, ordersResponse, paymentsResponse, tablesResponse] = await Promise.all([
+        api.getReservations(),
+        api.getFoodOrders(),
+        api.getPayments().catch(() => ({ payments: [] })),
+        api.getTables().catch(() => ({ tables: [] })),
+      ]);
+      
+      setReservations(reservationsResponse.reservations || []);
+      setOrders(ordersResponse.orders || []);
+      setPayments(paymentsResponse.payments || []);
+      setTables(tablesResponse.tables || []);
+      setLastUpdated(new Date());
+      
+      toast({
+        title: "Refreshed",
+        description: "Dashboard data has been updated",
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to refresh data",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Calculate stats
   const totalReservations = reservations.length;
@@ -119,24 +159,42 @@ export default function AdminDashboard() {
     );
   }
 
+  const availableTables = tables.filter(t => t.status === 'available').length;
+  const occupiedTables = tables.filter(t => t.status === 'occupied').length;
+
+  // Get today's reservations
+  const today = new Date().toISOString().split('T')[0];
+  const todayReservations = reservations.filter(r => r.reservation_date === today);
+
   return (
     <DashboardLayout role="admin">
       <div className="space-y-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's your hotel overview.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              Welcome back! Here's your restaurant overview.
+              <span className="text-xs">
+                • Last updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((stat) => (
-            <div key={stat.label} className="bg-card rounded-xl p-6 shadow-sm">
+            <div key={stat.label} className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center">
                   <stat.icon className="w-6 h-6 text-accent" />
                 </div>
-                <span className="flex items-center gap-1 text-sm text-success">
-                  <TrendingUp className="w-4 h-4" />
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Activity className="w-3 h-3" />
                   {stat.change}
                 </span>
               </div>
@@ -144,6 +202,50 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Additional Stats - Tables & Today */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
+                <UtensilsCrossed className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-success">{availableTables}</p>
+                <p className="text-sm text-muted-foreground">Available Tables</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{occupiedTables} occupied • {tables.length} total</p>
+          </div>
+
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-info/20 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-info" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-info">{todayReservations.length}</p>
+                <p className="text-sm text-muted-foreground">Today's Reservations</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {todayReservations.filter(r => r.status === 'confirmed').length} confirmed
+            </p>
+          </div>
+
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-accent">${foodRevenue.toFixed(0)}</p>
+                <p className="text-sm text-muted-foreground">Food Revenue</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{orders.length} total orders</p>
+          </div>
         </div>
 
         {/* Charts */}

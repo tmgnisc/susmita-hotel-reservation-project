@@ -31,7 +31,6 @@ const adminLinks = [
   { href: "/admin/tables", label: "Tables", icon: UtensilsCrossed },
   { href: "/admin/staff", label: "Staff", icon: Users },
   { href: "/admin/food-orders", label: "Food Orders", icon: UtensilsCrossed },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
