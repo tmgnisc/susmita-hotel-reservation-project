@@ -94,16 +94,24 @@ export const api = {
   },
 
   async updateProfile(updates: { name?: string; phone?: string; avatar?: string }) {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new ApiError('No user ID found', 401);
+    }
     return apiRequest<{ user: any }>('/auth/profile', {
       method: 'PUT',
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ ...updates, userId }),
     });
   },
 
   async changePassword(currentPassword: string, newPassword: string) {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new ApiError('No user ID found', 401);
+    }
     return apiRequest<{ message: string }>('/auth/change-password', {
       method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ currentPassword, newPassword, userId }),
     });
   },
 
@@ -207,6 +215,13 @@ export const api = {
     });
   },
 
+  async updateReservationStatus(reservationId: string, status: string) {
+    return apiRequest<{ reservation: any }>(`/reservations/${reservationId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
   // Food
   async getFoodItems(filters?: { category?: string; available?: boolean }) {
     const params = new URLSearchParams();
@@ -269,6 +284,13 @@ export const api = {
     return apiRequest<{ order: any }>('/food/orders', {
       method: 'POST',
       body: JSON.stringify(order),
+    });
+  },
+
+  async updateFoodOrderStatus(orderId: string, status: string) {
+    return apiRequest<{ order: any }>(`/food/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     });
   },
 

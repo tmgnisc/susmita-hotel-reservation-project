@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Save, Lock, User, Phone, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 export default function ProfilePage() {
   const { user, updateProfile, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -23,6 +24,12 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     name: "",
     phone: "",
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   // Update profile data when user changes
@@ -44,9 +51,11 @@ export default function ProfilePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <DashboardLayout role={user?.role === 'admin' ? 'admin' : user?.role === 'staff' ? 'staff' : 'user'}>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -54,11 +63,7 @@ export default function ProfilePage() {
     return null;
   }
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const userRole = user.role === 'admin' ? 'admin' : user.role === 'staff' ? 'staff' : 'user';
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,18 +214,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-
-        <div className="space-y-6">
+    <DashboardLayout role={userRole}>
+      <div className="space-y-6">
           {/* Profile Header */}
           <Card>
             <CardHeader>
@@ -420,8 +415,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
 
