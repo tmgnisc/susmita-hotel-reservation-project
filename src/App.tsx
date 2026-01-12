@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import RoomsPage from "./pages/RoomsPage";
@@ -37,26 +38,112 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            {/* Public routes - user only */}
+            <Route path="/" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <LandingPage />
+              </ProtectedRoute>
+            } />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/rooms/:id" element={<RoomDetailPage />} />
-            <Route path="/tables" element={<TablesPage />} />
-            <Route path="/tables/:id" element={<TableDetailPage />} />
-            <Route path="/dining" element={<DiningPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/staff" element={<StaffManagement />} />
-            <Route path="/staff" element={<StaffDashboard />} />
-            <Route path="/staff/reservations" element={<StaffReservations />} />
-            <Route path="/staff/orders" element={<StaffOrders />} />
-            <Route path="/staff/tables" element={<TableManagement />} />
-            <Route path="/staff/menu" element={<MenuManagement />} />
-            <Route path="/user" element={<UserDashboard />} />
-            <Route path="/user/profile" element={<ProfilePage />} />
-            <Route path="/user/reservations" element={<UserReservations />} />
-            <Route path="/user/orders" element={<UserOrders />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/cart" element={<CartPage />} />
+            <Route path="/rooms" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <RoomsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/rooms/:id" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <RoomDetailPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/tables" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <TablesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/tables/:id" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <TableDetailPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/dining" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <DiningPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/cart" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <CartPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Admin routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/staff" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <StaffManagement />
+              </ProtectedRoute>
+            } />
+            
+            {/* Staff routes */}
+            <Route path="/staff" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <StaffDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/reservations" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <StaffReservations />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/orders" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <StaffOrders />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/tables" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <TableManagement />
+              </ProtectedRoute>
+            } />
+            <Route path="/staff/menu" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <MenuManagement />
+              </ProtectedRoute>
+            } />
+            
+            {/* User routes */}
+            <Route path="/user" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <UserDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/user/reservations" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <UserReservations />
+              </ProtectedRoute>
+            } />
+            <Route path="/user/orders" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <UserOrders />
+              </ProtectedRoute>
+            } />
+            
+            {/* Profile routes - all authenticated users */}
+            <Route path="/user/profile" element={
+              <ProtectedRoute requireAuth={true}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute requireAuth={true}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

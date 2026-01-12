@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,22 @@ export default function AuthPage() {
     name: "",
   });
 
-  const { login, signup, user } = useAuth();
+  const { login, signup, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'admin') {
+        navigate("/admin");
+      } else if (user.role === 'staff') {
+        navigate("/staff");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +43,20 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-        if (result.success) {
+        if (result.success && result.user) {
           toast({
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
           
-          // Redirect to home page after login
-          navigate("/");
+          // Redirect based on user role
+          if (result.user.role === 'admin') {
+            navigate("/admin");
+          } else if (result.user.role === 'staff') {
+            navigate("/staff");
+          } else {
+            navigate("/");
+          }
         } else {
           toast({
             title: "Login failed",

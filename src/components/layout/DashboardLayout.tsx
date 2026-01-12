@@ -26,7 +26,6 @@ interface DashboardLayoutProps {
 }
 
 const adminLinks = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/reservations", label: "Reservations", icon: Calendar },
   { href: "/admin/tables", label: "Tables", icon: UtensilsCrossed },
@@ -37,7 +36,6 @@ const adminLinks = [
 ];
 
 const staffLinks = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
   { href: "/staff/reservations", label: "Reservations", icon: Calendar },
   { href: "/staff/tables", label: "Table Management", icon: UtensilsCrossed },
